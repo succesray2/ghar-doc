@@ -1,14 +1,15 @@
 node_modules/
-# apps/api/dist and packages/shared/dist are intentionally NOT ignored:
-# Render's web-service deploy artifact appears to exclude gitignored paths,
-# and the API's compiled output (plus its @ghar-doc/shared dependency) must
-# survive into the running instance. Static-site dist output doesn't need
-# to, since Render publishes those directly from disk in the build container.
+# apps/api/dist and packages/shared/dist are intentionally NOT ignored (left
+# un-ignored while chasing a Render deploy failure; the real cause turned out
+# to be a tsconfig rootDir issue, not this, but there's no downside to leaving
+# it scoped down like this). Static-site dist output doesn't need to survive
+# git's exclude filtering, since Render publishes those straight from disk.
 apps/web/dist/
 apps/marketing/dist/
 .turbo/
 .env
 .env.local
 *.log
+*.tsbuildinfo
 apps/api/generated/
 .DS_Store
