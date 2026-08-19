@@ -73,10 +73,17 @@ export class AuthController {
   }
 
   private setRefreshCookie(res: Response, token: string) {
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie(REFRESH_COOKIE, token, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      // 'lax' works locally (different ports on localhost are same-site).
+      // In production the web app and API start out on different Render
+      // subdomains (*.onrender.com is on the public suffix list, so they
+      // count as different sites to the browser) — cross-site cookies need
+      // 'none', which browsers only honor when 'secure' is also true. Still
+      // correct once a shared custom domain is connected later.
+      sameSite: isProduction ? 'none' : 'lax',
+      secure: isProduction,
       path: '/api/auth',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });

@@ -1,0 +1,73 @@
+# Render Blueprint — deploys all three Ghar Doc apps from this one repo.
+# In Render: New + -> Blueprint -> select this repo -> it reads this file.
+#
+# Everything here runs pnpm commands from the repo root (not each app's own
+# folder) because it's a pnpm workspace monorepo — apps/api and apps/web both
+# depend on packages/shared, which must be installed and built first.
+#
+# Service URLs are predictable from the `name` fields below
+# (https://<name>.onrender.com). If Render has to rename one because the name
+# is already taken globally, update the cross-referenced *_URL values on the
+# other services to match.
+
+services:
+  - type: web
+    name: ghar-doc-api
+    env: node
+    plan: free
+    buildCommand: >
+      npm install -g pnpm &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @ghar-doc/shared build &&
+      pnpm --filter @ghar-doc/api exec prisma generate &&
+      pnpm --filter @ghar-doc/api build
+    startCommand: node apps/api/dist/main.js
+    preDeployCommand: pnpm --filter @ghar-doc/api exec prisma migrate deploy
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES
+        value: 30d
+      - key: WEB_URL
+        value: https://ghar-doc-app.onrender.com
+
+  - type: web
+    name: ghar-doc-app
+    env: static
+    buildCommand: >
+      npm install -g pnpm &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @ghar-doc/shared build &&
+      pnpm --filter @ghar-doc/web build
+    staticPublishPath: apps/web/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://ghar-doc-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  - type: web
+    name: ghar-doc-marketing
+    env: static
+    buildCommand: >
+      npm install -g pnpm &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @ghar-doc/marketing build
+    staticPublishPath: apps/marketing/dist
+    envVars:
+      - key: VITE_APP_URL
+        value: https://ghar-doc-app.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

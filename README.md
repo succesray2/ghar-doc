@@ -69,6 +69,25 @@ Inspect the database directly any time with:
 pnpm db:studio
 ```
 
+## Deployment
+
+Deploys to [Render](https://render.com) via the `render.yaml` blueprint at the repo root — it defines all three services (API + both static sites) in one file.
+
+1. Push this repo to GitHub (see below if it isn't already).
+2. In Render: **New +** → **Blueprint** → select the repo. Render reads `render.yaml` and proposes all three services.
+3. When prompted, paste your Neon `DATABASE_URL` for the `ghar-doc-api` service (the only value the blueprint doesn't fill in automatically — JWT secrets are auto-generated, everything else is pre-filled).
+4. Deploy. First build takes a few minutes; the API's free-tier instance spins down after inactivity and takes ~30–50s to wake on the next request — expected, not a bug.
+5. Once live: `https://ghar-doc-marketing.onrender.com`, `https://ghar-doc-app.onrender.com`, `https://ghar-doc-api.onrender.com/api`. If Render had to rename a service (name already taken), update the cross-referenced URLs in `render.yaml` (`WEB_URL`, `VITE_API_URL`, `VITE_APP_URL`) to match, commit, and redeploy.
+
+**Custom domain**: add it in each Render service's Settings → Custom Domains, point your registrar's DNS at Render per its instructions, then update `WEB_URL` / `VITE_API_URL` / `VITE_APP_URL` to the real domains and redeploy.
+
+**First push to GitHub**, if not done yet:
+```powershell
+git remote add origin <your-repo-url>
+git branch -M main
+git push -u origin main
+```
+
 ## Roadmap
 
 Not built yet, but the data model and API already leave room for each without rework:
