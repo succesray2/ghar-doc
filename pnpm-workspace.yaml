@@ -1,6 +1,11 @@
 packages:
   - "apps/*"
   - "packages/*"
+overrides:
+  # apps/mobile pulled in a second zod copy transitively via Expo's own CLI
+  # tooling (not our app code), which caused a nominal type mismatch against
+  # packages/shared's zod-typed exports. Pin everything to one version.
+  zod: 3.23.8
 allowBuilds:
   '@nestjs/core': true
   '@prisma/client': true

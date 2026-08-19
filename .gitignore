@@ -6,6 +6,8 @@ node_modules/
 # git's exclude filtering, since Render publishes those straight from disk.
 apps/web/dist/
 apps/marketing/dist/
+apps/mobile/dist/
+apps/mobile/.expo/
 .turbo/
 .env
 .env.local
