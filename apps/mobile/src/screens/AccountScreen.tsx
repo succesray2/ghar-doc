@@ -7,12 +7,11 @@ import { useLogout } from '../hooks/useAuth';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { colors, fonts } from '../theme/colors';
+import { TERMS_AND_CONDITIONS } from '../data/legal';
 import type { PatientTabScreenProps } from '../navigation/types';
 
 type Props = PatientTabScreenProps<'Account'>;
 
-const TERMS_BODY =
-  'Placeholder terms of service. Replace with GharDoc’s real terms before launch. By using this app you agree to receive doctor home-visit services arranged through GharDoc, subject to doctor availability and admin assignment.';
 const PRIVACY_BODY =
   'Placeholder privacy policy. Replace with GharDoc’s real policy before launch. Your account and visit details are accessible only to you and your assigned care team.';
 const REFUND_BODY =
@@ -66,7 +65,7 @@ export function AccountScreen({ navigation }: Props) {
       <Section title="Help & Legal">
         <Row icon="lifebuoy" label="Support" onPress={() => rootNav?.navigate('Support')} />
         <Row icon="help-circle-outline" label="FAQs" onPress={() => rootNav?.navigate('StaticInfo', { title: 'FAQs', body: FAQ_BODY })} />
-        <Row icon="file-document-edit-outline" label="Terms & Conditions" onPress={() => rootNav?.navigate('StaticInfo', { title: 'Terms & Conditions', body: TERMS_BODY })} />
+        <Row icon="file-document-edit-outline" label="Terms & Conditions" onPress={() => rootNav?.navigate('StaticInfo', { title: 'Terms & Conditions', body: TERMS_AND_CONDITIONS })} />
         <Row icon="shield-lock-outline" label="Privacy Policy" onPress={() => rootNav?.navigate('StaticInfo', { title: 'Privacy Policy', body: PRIVACY_BODY })} />
         <Row icon="cash-refund" label="Refund Policy" onPress={() => rootNav?.navigate('StaticInfo', { title: 'Refund Policy', body: REFUND_BODY })} />
         <Row icon="information-outline" label="About GharDoc" onPress={() => rootNav?.navigate('StaticInfo', { title: 'About GharDoc', body: ABOUT_BODY })} last />
