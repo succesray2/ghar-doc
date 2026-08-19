@@ -1,5 +1,11 @@
 node_modules/
-dist/
+# apps/api/dist and packages/shared/dist are intentionally NOT ignored:
+# Render's web-service deploy artifact appears to exclude gitignored paths,
+# and the API's compiled output (plus its @ghar-doc/shared dependency) must
+# survive into the running instance. Static-site dist output doesn't need
+# to, since Render publishes those directly from disk in the build container.
+apps/web/dist/
+apps/marketing/dist/
 .turbo/
 .env
 .env.local
