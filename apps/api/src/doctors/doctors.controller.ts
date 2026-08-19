@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Query, UseGuards, UsePipes } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
 import { Role, UpdateDoctorAvailabilitySchema, type UpdateDoctorAvailabilityInput } from '@ghar-doc/shared';
 import { DoctorsService } from './doctors.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -34,8 +34,10 @@ export class DoctorsController {
 
   @Roles(Role.DOCTOR)
   @Patch('me/availability')
-  @UsePipes(new ZodValidationPipe(UpdateDoctorAvailabilitySchema))
-  setMyAvailability(@CurrentUser() user: AuthenticatedUser, @Body() body: UpdateDoctorAvailabilityInput) {
+  setMyAvailability(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body(new ZodValidationPipe(UpdateDoctorAvailabilitySchema)) body: UpdateDoctorAvailabilityInput,
+  ) {
     return this.doctorsService.setAvailability(user.id, body.isAvailable);
   }
 }

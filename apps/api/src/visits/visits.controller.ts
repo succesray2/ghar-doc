@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards, UsePipes } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import {
   CreateVisitSchema,
   AssignDoctorSchema,
@@ -26,8 +26,7 @@ export class VisitsController {
 
   @Roles(Role.PATIENT)
   @Post()
-  @UsePipes(new ZodValidationPipe(CreateVisitSchema))
-  create(@CurrentUser() user: AuthenticatedUser, @Body() body: CreateVisitInput) {
+  create(@CurrentUser() user: AuthenticatedUser, @Body(new ZodValidationPipe(CreateVisitSchema)) body: CreateVisitInput) {
     return this.visitsService.create(user.id, body);
   }
 
@@ -56,22 +55,31 @@ export class VisitsController {
 
   @Roles(Role.ADMIN)
   @Patch(':id/assign')
-  @UsePipes(new ZodValidationPipe(AssignDoctorSchema))
-  assign(@Param('id') id: string, @Body() body: AssignDoctorInput, @CurrentUser() user: AuthenticatedUser) {
+  assign(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(AssignDoctorSchema)) body: AssignDoctorInput,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.visitsService.assign(id, body.doctorId, user);
   }
 
   @Roles(Role.DOCTOR)
   @Patch(':id/status')
-  @UsePipes(new ZodValidationPipe(UpdateVisitStatusSchema))
-  updateStatus(@Param('id') id: string, @Body() body: UpdateVisitStatusInput, @CurrentUser() user: AuthenticatedUser) {
+  updateStatus(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(UpdateVisitStatusSchema)) body: UpdateVisitStatusInput,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.visitsService.updateStatus(id, body.status, user);
   }
 
   @Roles(Role.PATIENT, Role.ADMIN)
   @Patch(':id/cancel')
-  @UsePipes(new ZodValidationPipe(CancelVisitSchema))
-  cancel(@Param('id') id: string, @Body() body: CancelVisitInput, @CurrentUser() user: AuthenticatedUser) {
+  cancel(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(CancelVisitSchema)) body: CancelVisitInput,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.visitsService.cancel(id, user, body.reason);
   }
 }

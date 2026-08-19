@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Res, UseGuards, UsePipes } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import {
   SignupPatientSchema,
@@ -21,16 +21,20 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('signup/patient')
-  @UsePipes(new ZodValidationPipe(SignupPatientSchema))
-  async signupPatient(@Body() body: SignupPatientInput, @Res({ passthrough: true }) res: Response) {
+  async signupPatient(
+    @Body(new ZodValidationPipe(SignupPatientSchema)) body: SignupPatientInput,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const { accessToken, refreshToken, user } = await this.authService.signupPatient(body);
     this.setRefreshCookie(res, refreshToken);
     return { accessToken, user };
   }
 
   @Post('signup/doctor')
-  @UsePipes(new ZodValidationPipe(SignupDoctorSchema))
-  async signupDoctor(@Body() body: SignupDoctorInput, @Res({ passthrough: true }) res: Response) {
+  async signupDoctor(
+    @Body(new ZodValidationPipe(SignupDoctorSchema)) body: SignupDoctorInput,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const { accessToken, refreshToken, user } = await this.authService.signupDoctor(body);
     this.setRefreshCookie(res, refreshToken);
     return { accessToken, user };
@@ -38,8 +42,10 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ZodValidationPipe(LoginSchema))
-  async login(@Body() body: LoginInput, @Res({ passthrough: true }) res: Response) {
+  async login(
+    @Body(new ZodValidationPipe(LoginSchema)) body: LoginInput,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const { accessToken, refreshToken, user } = await this.authService.login(body);
     this.setRefreshCookie(res, refreshToken);
     return { accessToken, user };

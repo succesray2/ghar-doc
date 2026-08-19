@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, UseGuards, UsePipes } from '@nestjs/common';
+import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
 import { UpdateProfileSchema, type UpdateProfileInput } from '@ghar-doc/shared';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -17,8 +17,7 @@ export class UsersController {
   }
 
   @Patch('me')
-  @UsePipes(new ZodValidationPipe(UpdateProfileSchema))
-  updateMe(@CurrentUser() user: AuthenticatedUser, @Body() body: UpdateProfileInput) {
+  updateMe(@CurrentUser() user: AuthenticatedUser, @Body(new ZodValidationPipe(UpdateProfileSchema)) body: UpdateProfileInput) {
     return this.usersService.updateMe(user.id, body);
   }
 }
