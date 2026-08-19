@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { diagnosticCategories, diagnosticPackages, diagnosticTests, individualTotal } from '../../data/diagnostics';
 import { Card } from '../../components/Card';
@@ -18,7 +19,8 @@ export function DiagnosticsScreen({ navigation }: Props) {
   }, [query]);
 
   return (
-    <ScrollView style={styles.flex} contentContainerStyle={styles.scroll}>
+    <SafeAreaView style={styles.flex} edges={['top']}>
+    <ScrollView contentContainerStyle={styles.scroll}>
       <Text style={styles.title}>Diagnostics</Text>
       <Text style={styles.subtitle}>Understand your tests. Choose with confidence.</Text>
 
@@ -94,6 +96,7 @@ export function DiagnosticsScreen({ navigation }: Props) {
         </>
       )}
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

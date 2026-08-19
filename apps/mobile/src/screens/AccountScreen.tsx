@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../lib/auth-store';
 import { useLogout } from '../hooks/useAuth';
@@ -30,7 +31,8 @@ export function AccountScreen({ navigation }: Props) {
   const initial = user.firstName?.charAt(0).toUpperCase() ?? '?';
 
   return (
-    <ScrollView style={styles.flex} contentContainerStyle={styles.scroll}>
+    <SafeAreaView style={styles.flex} edges={['top']}>
+    <ScrollView contentContainerStyle={styles.scroll}>
       <Card style={styles.headerCard}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{initial}</Text>
@@ -80,6 +82,7 @@ export function AccountScreen({ navigation }: Props) {
         />
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

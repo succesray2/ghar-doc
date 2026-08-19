@@ -1,6 +1,7 @@
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LoginSchema, type LoginInput } from '@ghar-doc/shared';
 import { useLogin } from '../../hooks/useAuth';
@@ -21,6 +22,7 @@ export function LoginScreen({ navigation }: Props) {
   } = useForm<LoginInput>({ resolver: zodResolver(LoginSchema) });
 
   return (
+    <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Card style={styles.card}>
@@ -78,6 +80,7 @@ export function LoginScreen({ navigation }: Props) {
         </Card>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

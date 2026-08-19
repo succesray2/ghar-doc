@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { mockDoctors } from '../../data/doctors';
 import { Card } from '../../components/Card';
@@ -23,7 +24,7 @@ export function DoctorsScreen({ navigation }: Props) {
   }, [query, specialty]);
 
   return (
-    <View style={styles.flex}>
+    <SafeAreaView style={styles.flex} edges={['top']}>
       <View style={styles.searchWrap}>
         <Feather name="search" size={18} color={colors.ink400} />
         <TextInput
@@ -77,7 +78,7 @@ export function DoctorsScreen({ navigation }: Props) {
           </Pressable>
         )}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button } from '../../components/Button';
@@ -11,7 +12,7 @@ export function BookingConfirmationScreen({ route, navigation }: Props) {
   const { title, subtitle } = route.params;
 
   return (
-    <View style={styles.flex}>
+    <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
       <View style={styles.iconCircle}>
         <MaterialCommunityIcons name="check" size={36} color="#fff" />
       </View>
@@ -20,7 +21,7 @@ export function BookingConfirmationScreen({ route, navigation }: Props) {
       <View style={styles.button}>
         <Button title="Go Home" onPress={() => navigation.popToTop()} />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Role, VisitStatus, isTransitionAllowed, type VisitDto } from '@ghar-doc/shared';
 import { useCancelVisit, useMyVisits } from '../../hooks/useVisits';
 import { Card } from '../../components/Card';
@@ -38,7 +39,7 @@ export function MyVisitsScreen({ navigation }: Props) {
   }, [visits, tab]);
 
   return (
-    <View style={styles.flex}>
+    <SafeAreaView style={styles.flex} edges={['top']}>
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -81,7 +82,7 @@ export function MyVisitsScreen({ navigation }: Props) {
           )}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

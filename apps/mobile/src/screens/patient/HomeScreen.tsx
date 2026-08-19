@@ -1,4 +1,5 @@
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../../lib/auth-store';
 import { useMyVisits } from '../../hooks/useVisits';
@@ -21,7 +22,8 @@ export function HomeScreen({ navigation }: Props) {
   const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <ScrollView style={styles.flex} contentContainerStyle={styles.scroll}>
+    <SafeAreaView style={styles.flex} edges={['top']}>
+    <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.header}>
         <Image source={require('../../../assets/logo-icon.png')} style={styles.logo} resizeMode="contain" />
         <View style={styles.headerActions}>
@@ -100,6 +102,7 @@ export function HomeScreen({ navigation }: Props) {
         </View>
       ))}
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
