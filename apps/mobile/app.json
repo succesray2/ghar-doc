@@ -2,6 +2,7 @@
   "expo": {
     "name": "Ghar Doc",
     "slug": "ghar-doc-mobile",
+    "owner": "ghardoc",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -35,6 +36,11 @@
           "backgroundColor": "#f8faf9"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "55db53e9-f290-4aa5-a792-024fe3496a2a"
+      }
+    }
   }
 }
