@@ -1,0 +1,15 @@
+{
+  "name": "ghar-doc",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "db:migrate": "pnpm --filter @ghar-doc/api exec prisma migrate dev --name init",
+    "db:seed": "pnpm --filter @ghar-doc/api exec prisma db seed",
+    "db:studio": "pnpm --filter @ghar-doc/api exec prisma studio",
+    "db:generate": "pnpm --filter @ghar-doc/api exec prisma generate"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.3"
+  }
+}

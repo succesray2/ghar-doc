@@ -1,0 +1,69 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { CreateVisitInput, VisitDto, VisitStatus } from '@ghar-doc/shared';
+import { apiClient } from '../lib/api-client';
+
+export function useMyVisits() {
+  return useQuery({
+    queryKey: ['visits', 'mine'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<VisitDto[]>('/visits/mine');
+      return data;
+    },
+    refetchInterval: 8000,
+  });
+}
+
+export function useAssignedVisits() {
+  return useQuery({
+    queryKey: ['visits', 'assigned'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<VisitDto[]>('/visits/assigned');
+      return data;
+    },
+    refetchInterval: 8000,
+  });
+}
+
+export function useAllVisits(status?: VisitStatus) {
+  return useQuery({
+    queryKey: ['visits', 'all', status ?? 'ALL'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<VisitDto[]>('/visits', { params: status ? { status } : undefined });
+      return data;
+    },
+    refetchInterval: 8000,
+  });
+}
+
+export function useCreateVisit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateVisitInput) => {
+      const { data } = await apiClient.post<VisitDto>('/visits', input);
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['visits'] }),
+  });
+}
+
+export function useUpdateVisitStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: VisitStatus }) => {
+      const { data } = await apiClient.patch<VisitDto>(`/visits/${id}/status`, { status });
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['visits'] }),
+  });
+}
+
+export function useCancelVisit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
+      const { data } = await apiClient.patch<VisitDto>(`/visits/${id}/cancel`, { reason });
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['visits'] }),
+  });
+}
