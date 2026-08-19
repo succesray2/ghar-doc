@@ -63,18 +63,23 @@ export function SignupScreen({ navigation }: Props) {
 
 function PatientSignupForm() {
   const signup = useSignupPatient();
+  const [confirmPassword, setConfirmPassword] = useState('');
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<SignupPatientInput>({ resolver: zodResolver(SignupPatientSchema) });
+  const password = watch('password');
+  const confirmError = confirmPassword.length > 0 && confirmPassword !== password ? 'Passwords do not match' : undefined;
 
   return (
     <View>
       <TextField control={control} name="firstName" label="First name" error={errors.firstName?.message} />
       <TextField control={control} name="lastName" label="Last name" error={errors.lastName?.message} />
       <TextField control={control} name="email" label="Email" keyboardType="email-address" autoCapitalize="none" error={errors.email?.message} />
-      <TextField control={control} name="password" label="Password" secureTextEntry autoCapitalize="none" error={errors.password?.message} />
+      <TextField control={control} name="password" label="Password" secureTextEntry autoCapitalize="none" hint="At least 8 characters" error={errors.password?.message} />
+      <Field label="Confirm password" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry autoCapitalize="none" error={confirmError} />
       <TextField control={control} name="phone" label="Phone (optional)" keyboardType="phone-pad" />
       <TextField control={control} name="addressLine1" label="Address line 1" error={errors.addressLine1?.message} />
       <TextField control={control} name="addressLine2" label="Address line 2 (optional)" />
@@ -85,7 +90,7 @@ function PatientSignupForm() {
       <Button
         title={signup.isPending ? 'Creating account…' : 'Create patient account'}
         onPress={handleSubmit((data) => signup.mutate(data))}
-        disabled={signup.isPending}
+        disabled={signup.isPending || !confirmPassword || confirmPassword !== password}
         loading={signup.isPending}
       />
     </View>
@@ -94,18 +99,23 @@ function PatientSignupForm() {
 
 function DoctorSignupForm() {
   const signup = useSignupDoctor();
+  const [confirmPassword, setConfirmPassword] = useState('');
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<SignupDoctorInput>({ resolver: zodResolver(SignupDoctorSchema) });
+  const password = watch('password');
+  const confirmError = confirmPassword.length > 0 && confirmPassword !== password ? 'Passwords do not match' : undefined;
 
   return (
     <View>
       <TextField control={control} name="firstName" label="First name" error={errors.firstName?.message} />
       <TextField control={control} name="lastName" label="Last name" error={errors.lastName?.message} />
       <TextField control={control} name="email" label="Email" keyboardType="email-address" autoCapitalize="none" error={errors.email?.message} />
-      <TextField control={control} name="password" label="Password" secureTextEntry autoCapitalize="none" error={errors.password?.message} />
+      <TextField control={control} name="password" label="Password" secureTextEntry autoCapitalize="none" hint="At least 8 characters" error={errors.password?.message} />
+      <Field label="Confirm password" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry autoCapitalize="none" error={confirmError} />
       <TextField control={control} name="phone" label="Phone (optional)" keyboardType="phone-pad" />
       <TextField control={control} name="licenseNumber" label="Medical license number" error={errors.licenseNumber?.message} />
       <TextField control={control} name="specialty" label="Specialty" error={errors.specialty?.message} />
@@ -115,7 +125,7 @@ function DoctorSignupForm() {
       <Button
         title={signup.isPending ? 'Creating account…' : 'Create doctor account'}
         onPress={handleSubmit((data) => signup.mutate(data))}
-        disabled={signup.isPending}
+        disabled={signup.isPending || !confirmPassword || confirmPassword !== password}
         loading={signup.isPending}
       />
     </View>

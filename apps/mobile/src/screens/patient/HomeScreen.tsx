@@ -82,9 +82,9 @@ export function HomeScreen({ navigation }: Props) {
         />
         <SecondaryTile icon="folder-heart-outline" label="Health Records" onPress={() => rootNav?.navigate('HealthRecords')} />
         <SecondaryTile
-          icon="pill"
-          label="Medicine"
-          onPress={() => rootNav?.navigate('StaticInfo', { title: 'Medicine', body: 'Pharmacy ordering is coming soon to GharDoc.' })}
+          icon="run"
+          label="Physiotherapy"
+          onPress={() => rootNav?.navigate('RequestVisit', { reasonHint: 'Physiotherapy: ' })}
         />
         <SecondaryTile icon="ambulance" label="Emergency" danger onPress={() => rootNav?.navigate('Emergency')} />
       </View>

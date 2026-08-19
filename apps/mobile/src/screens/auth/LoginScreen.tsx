@@ -63,6 +63,10 @@ export function LoginScreen({ navigation }: Props) {
               />
             )}
           />
+          <Pressable onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotWrap}>
+            <Text style={styles.link}>Forgot password?</Text>
+          </Pressable>
+
           {login.isError ? <Text style={styles.errorText}>Invalid email or password.</Text> : null}
           <Button
             title={login.isPending ? 'Signing in…' : 'Sign in'}
@@ -94,6 +98,7 @@ const styles = StyleSheet.create({
   gharText: { color: colors.gharBlue },
   docText: { color: colors.brand600 },
   subtitle: { fontFamily: fonts.regular, fontSize: 13, color: colors.textMuted, marginTop: 4 },
+  forgotWrap: { alignSelf: 'flex-end', marginBottom: 16 },
   errorText: { fontFamily: fonts.regular, color: colors.danger, fontSize: 13, marginBottom: 12 },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
   footerText: { fontFamily: fonts.regular, color: colors.textMuted, fontSize: 13 },
