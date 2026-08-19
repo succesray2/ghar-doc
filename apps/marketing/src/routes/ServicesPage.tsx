@@ -2,10 +2,13 @@ import { services } from '../data/services';
 import { SectionHeading } from '../components/SectionHeading';
 import { ServiceCard } from '../components/ServiceCard';
 import { Reveal } from '../components/Reveal';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 const APP_URL = import.meta.env.VITE_APP_URL ?? 'http://localhost:5173';
 
 export function ServicesPage() {
+  usePageMeta('Services', 'Doctor consultations, home visits, nursing, diagnostics, physiotherapy, and elderly care — every service delivered by a verified professional.');
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
       <Reveal>

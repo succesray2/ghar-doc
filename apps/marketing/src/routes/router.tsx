@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { RootLayout } from './RootLayout';
 import { HomePage } from './HomePage';
 import { ServicesPage } from './ServicesPage';
+import { DiagnosticsPage } from './DiagnosticsPage';
 import { AboutPage } from './AboutPage';
 import { ContactPage } from './ContactPage';
 import { PrivacyPolicyPage } from './PrivacyPolicyPage';
@@ -13,6 +14,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: 'services', element: <ServicesPage /> },
+      { path: 'diagnostics', element: <DiagnosticsPage /> },
       { path: 'about', element: <AboutPage /> },
       { path: 'contact', element: <ContactPage /> },
       { path: 'privacy', element: <PrivacyPolicyPage /> },

@@ -12,7 +12,7 @@ export function Hero() {
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-4 pt-14 md:grid-cols-2 md:pb-8 md:pt-20">
         <Reveal>
           <p className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-sage-600">
-            Trusted by {siteContent.trustedFamiliesCount} families in {siteContent.city}
+            <MapPin size={12} aria-hidden="true" /> Now serving select areas of {siteContent.city}
           </p>
           <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight text-navy-900 sm:text-5xl">
             Trusted healthcare, closer to home.

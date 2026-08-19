@@ -4,6 +4,10 @@ import { Section } from '../Section';
 import { SectionHeading } from '../SectionHeading';
 import { Reveal } from '../Reveal';
 
+// Not currently rendered on HomePage — the data behind it
+// (siteContent.testimonials) is explicitly placeholder ("Placeholder
+// Patient"), and this site doesn't fabricate testimonials. Wire this back
+// into HomePage once real patient quotes exist to replace that data.
 export function TestimonialsSection() {
   return (
     <Section id="testimonials" tone="soft">

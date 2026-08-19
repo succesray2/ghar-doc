@@ -6,6 +6,7 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { FaqItem } from '../components/FaqItem';
 import { Reveal } from '../components/Reveal';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 interface FormState {
   name: string;
@@ -18,6 +19,7 @@ interface FormState {
 const EMPTY_FORM: FormState = { name: '', phone: '', email: '', subject: '', message: '' };
 
 export function ContactPage() {
+  usePageMeta('Contact', 'Get in touch with the Ghar Doc team — booking, doctor visits, or general questions.');
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [sent, setSent] = useState(false);

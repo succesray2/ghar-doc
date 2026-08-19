@@ -3,8 +3,11 @@ import { SectionHeading } from '../components/SectionHeading';
 import { IconTile } from '../components/IconTile';
 import { Reveal } from '../components/Reveal';
 import type { IconName } from '../lib/icons';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 export function AboutPage() {
+  usePageMeta('About', "Ghar Doc's mission is to bring verified, trustworthy healthcare closer to home for every family.");
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-16 md:py-24">
       <Reveal>

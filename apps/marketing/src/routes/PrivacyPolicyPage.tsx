@@ -1,4 +1,8 @@
+import { usePageMeta } from '../hooks/usePageMeta';
+
 export function PrivacyPolicyPage() {
+  usePageMeta('Privacy Policy', "Ghar Doc's privacy policy.");
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 md:py-24">
       <h1 className="text-3xl font-bold text-navy-900">Privacy Policy</h1>

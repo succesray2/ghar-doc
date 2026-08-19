@@ -8,6 +8,7 @@ const APP_URL = import.meta.env.VITE_APP_URL ?? 'http://localhost:5173';
 const NAV_LINKS = [
   { to: '/', label: 'Home', hash: false },
   { to: '/services', label: 'Services', hash: false },
+  { to: '/diagnostics', label: 'Diagnostics', hash: false },
   { to: '/#how-it-works', label: 'How It Works', hash: true },
   { to: '/about', label: 'About', hash: false },
   { to: '/contact', label: 'Contact', hash: false },
