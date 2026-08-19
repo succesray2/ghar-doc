@@ -28,6 +28,13 @@ enum VisitPaymentStatus {
   REFUNDED
 }
 
+enum DoctorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -40,12 +47,13 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  patientProfile    PatientProfile?
-  doctorProfile     DoctorProfile?
-  refreshTokens     RefreshToken[]
-  visitsAsPatient   Visit[]            @relation("PatientVisits")
-  visitsAsDoctor    Visit[]            @relation("DoctorVisits")
-  visitStatusEvents VisitStatusEvent[]
+  patientProfile     PatientProfile?
+  doctorProfile      DoctorProfile?
+  refreshTokens      RefreshToken[]
+  visitsAsPatient    Visit[]             @relation("PatientVisits")
+  visitsAsDoctor     Visit[]             @relation("DoctorVisits")
+  visitStatusEvents  VisitStatusEvent[]
+  doctorStatusEvents DoctorStatusEvent[]
 }
 
 model PatientProfile {
@@ -67,17 +75,35 @@ model PatientProfile {
 }
 
 model DoctorProfile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id])
+  id              String       @id @default(cuid())
+  userId          String       @unique
+  user            User         @relation(fields: [userId], references: [id])
   licenseNumber   String
   specialty       String
   bio             String?
   yearsExperience Int?
-  isApproved      Boolean  @default(false)
-  isAvailable     Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  status          DoctorStatus @default(PENDING)
+  statusReason    String?
+  reviewedAt      DateTime?
+  isAvailable     Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  statusEvents DoctorStatusEvent[]
+}
+
+// Audit trail of every doctor verification decision — same pattern as
+// VisitStatusEvent. Powers the admin "Doctor Applications" review screen.
+model DoctorStatusEvent {
+  id              String        @id @default(cuid())
+  doctorProfileId String
+  doctorProfile   DoctorProfile @relation(fields: [doctorProfileId], references: [id])
+  fromStatus      DoctorStatus?
+  toStatus        DoctorStatus
+  reason          String?
+  changedById     String
+  changedBy       User          @relation(fields: [changedById], references: [id])
+  createdAt       DateTime      @default(now())
 }
 
 model Visit {

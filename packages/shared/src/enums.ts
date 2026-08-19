@@ -21,3 +21,11 @@ export const VisitPaymentStatus = {
   REFUNDED: 'REFUNDED',
 } as const;
 export type VisitPaymentStatus = (typeof VisitPaymentStatus)[keyof typeof VisitPaymentStatus];
+
+export const DoctorStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  SUSPENDED: 'SUSPENDED',
+} as const;
+export type DoctorStatus = (typeof DoctorStatus)[keyof typeof DoctorStatus];

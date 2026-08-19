@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Role, VisitStatus, type CreateVisitInput } from '@ghar-doc/shared';
+import { DoctorStatus, Role, VisitStatus, type CreateVisitInput } from '@ghar-doc/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthenticatedUser } from '../auth/types';
 import { isTransitionAllowed, timestampFieldFor } from './visit-status.util';
@@ -59,7 +59,7 @@ export class VisitsService {
       throw new BadRequestException(`Cannot assign a visit in status ${visit.status}`);
     }
     const doctorProfile = await this.prisma.doctorProfile.findUnique({ where: { userId: doctorId } });
-    if (!doctorProfile || !doctorProfile.isApproved) {
+    if (!doctorProfile || doctorProfile.status !== DoctorStatus.APPROVED) {
       throw new BadRequestException('Doctor is not approved for assignment');
     }
     return this.transition(visit, VisitStatus.ASSIGNED, actor, { doctorId });

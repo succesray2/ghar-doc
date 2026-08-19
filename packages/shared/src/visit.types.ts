@@ -1,4 +1,4 @@
-import type { Role, VisitStatus, VisitPaymentStatus } from './enums';
+import type { Role, VisitStatus, VisitPaymentStatus, DoctorStatus } from './enums';
 
 export interface UserDto {
   id: string;
@@ -37,9 +37,22 @@ export interface DoctorListItemDto {
   id: string;
   firstName: string;
   lastName: string;
+  email: string;
   specialty: string;
-  isApproved: boolean;
+  licenseNumber: string;
+  yearsExperience: number | null;
+  status: DoctorStatus;
+  statusReason: string | null;
   isAvailable: boolean;
+}
+
+export interface DoctorStatusEventDto {
+  id: string;
+  fromStatus: DoctorStatus | null;
+  toStatus: DoctorStatus;
+  reason: string | null;
+  changedById: string;
+  createdAt: string;
 }
 
 export interface AuthResponseDto {

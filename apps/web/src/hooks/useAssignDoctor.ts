@@ -7,7 +7,7 @@ export function useAssignableDoctors() {
     queryKey: ['doctors', 'assignable'],
     queryFn: async () => {
       const { data } = await apiClient.get<DoctorListItemDto[]>('/doctors', {
-        params: { isApproved: true, isAvailable: true },
+        params: { status: 'APPROVED', isAvailable: true },
       });
       return data;
     },

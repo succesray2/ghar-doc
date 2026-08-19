@@ -1,4 +1,4 @@
-export { Role, VisitStatus, VisitPaymentStatus } from './enums';
+export { Role, VisitStatus, VisitPaymentStatus, DoctorStatus } from './enums';
 
 export {
   LoginSchema,
@@ -14,8 +14,10 @@ export {
 export {
   UpdateProfileSchema,
   UpdateDoctorAvailabilitySchema,
+  UpdateDoctorStatusSchema,
   type UpdateProfileInput,
   type UpdateDoctorAvailabilityInput,
+  type UpdateDoctorStatusInput,
 } from './user.schemas';
 
 export {
@@ -29,7 +31,14 @@ export {
   type CancelVisitInput,
 } from './visit.schemas';
 
-export type { UserDto, VisitDto, DoctorListItemDto, AuthResponseDto, AuthResponseMobileDto } from './visit.types';
+export type {
+  UserDto,
+  VisitDto,
+  DoctorListItemDto,
+  DoctorStatusEventDto,
+  AuthResponseDto,
+  AuthResponseMobileDto,
+} from './visit.types';
 
 export {
   VISIT_TRANSITIONS,

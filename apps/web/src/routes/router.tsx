@@ -11,6 +11,7 @@ import { DoctorLayout } from './doctor/DoctorLayout';
 import { AssignedVisitsPage } from './doctor/AssignedVisitsPage';
 import { AdminLayout } from './admin/AdminLayout';
 import { AllVisitsPage } from './admin/AllVisitsPage';
+import { DoctorApplicationsPage } from './admin/DoctorApplicationsPage';
 
 export const router = createBrowserRouter([
   {
@@ -54,6 +55,7 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="visits" replace /> },
               { path: 'visits', element: <AllVisitsPage /> },
+              { path: 'doctors', element: <DoctorApplicationsPage /> },
             ],
           },
         ],

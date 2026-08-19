@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, Role, DoctorStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -35,8 +35,29 @@ async function main() {
           specialty: 'General Medicine',
           bio: 'General physician available for home visits.',
           yearsExperience: 8,
-          isApproved: true,
+          status: DoctorStatus.APPROVED,
+          reviewedAt: new Date(),
           isAvailable: true,
+        },
+      },
+    },
+  });
+
+  const pendingDoctor = await prisma.user.upsert({
+    where: { email: 'pending.doctor@ghardoc.com' },
+    update: {},
+    create: {
+      email: 'pending.doctor@ghardoc.com',
+      passwordHash,
+      role: Role.DOCTOR,
+      firstName: 'Priya',
+      lastName: 'Singh',
+      doctorProfile: {
+        create: {
+          licenseNumber: 'MED-000456',
+          specialty: 'Pediatrics',
+          bio: 'Recently signed up, awaiting admin review.',
+          yearsExperience: 3,
         },
       },
     },
@@ -63,9 +84,10 @@ async function main() {
   });
 
   console.log('Seeded accounts (all share the same password):');
-  console.log(`  Admin:   ${admin.email}`);
-  console.log(`  Doctor:  ${doctor.email}`);
-  console.log(`  Patient: ${patient.email}`);
+  console.log(`  Admin:           ${admin.email}`);
+  console.log(`  Doctor (approved): ${doctor.email}`);
+  console.log(`  Doctor (pending):  ${pendingDoctor.email}`);
+  console.log(`  Patient:         ${patient.email}`);
   console.log(`  Password: ${SEED_PASSWORD}`);
 }
 

@@ -1,5 +1,12 @@
 import { Body, Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
-import { Role, UpdateDoctorAvailabilitySchema, type UpdateDoctorAvailabilityInput } from '@ghar-doc/shared';
+import {
+  DoctorStatus,
+  Role,
+  UpdateDoctorAvailabilitySchema,
+  UpdateDoctorStatusSchema,
+  type UpdateDoctorAvailabilityInput,
+  type UpdateDoctorStatusInput,
+} from '@ghar-doc/shared';
 import { DoctorsService } from './doctors.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -12,6 +19,11 @@ function parseBoolFlag(value?: string): boolean | undefined {
   return value === undefined ? undefined : value === 'true';
 }
 
+function parseStatusFlag(value?: string): DoctorStatus | undefined {
+  if (value === undefined) return undefined;
+  return Object.values(DoctorStatus).includes(value as DoctorStatus) ? (value as DoctorStatus) : undefined;
+}
+
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('doctors')
 export class DoctorsController {
@@ -19,17 +31,27 @@ export class DoctorsController {
 
   @Roles(Role.ADMIN)
   @Get()
-  list(@Query('isApproved') isApproved?: string, @Query('isAvailable') isAvailable?: string) {
+  list(@Query('status') status?: string, @Query('isAvailable') isAvailable?: string) {
     return this.doctorsService.list({
-      isApproved: parseBoolFlag(isApproved),
+      status: parseStatusFlag(status),
       isAvailable: parseBoolFlag(isAvailable),
     });
   }
 
   @Roles(Role.ADMIN)
-  @Patch(':id/approve')
-  approve(@Param('id') id: string) {
-    return this.doctorsService.approve(id);
+  @Get(':id/status-history')
+  statusHistory(@Param('id') id: string) {
+    return this.doctorsService.statusHistory(id);
+  }
+
+  @Roles(Role.ADMIN)
+  @Patch(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(UpdateDoctorStatusSchema)) body: UpdateDoctorStatusInput,
+    @CurrentUser() admin: AuthenticatedUser,
+  ) {
+    return this.doctorsService.updateStatus(id, body.status as DoctorStatus, body.reason, admin.id);
   }
 
   @Roles(Role.DOCTOR)
