@@ -4,8 +4,10 @@ export type AuthStackParamList = {
 };
 
 export type PatientTabParamList = {
-  RequestVisit: undefined;
+  Home: undefined;
   MyVisits: undefined;
+  RequestVisit: undefined;
+  Support: undefined;
   Profile: undefined;
 };
 
