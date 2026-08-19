@@ -2,16 +2,16 @@ import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CreateVisitSchema, type CreateVisitInput } from '@ghar-doc/shared';
 import { useCreateVisit } from '../../hooks/useVisits';
 import { Card } from '../../components/Card';
 import { Field } from '../../components/Field';
 import { Button } from '../../components/Button';
 import { colors, fonts } from '../../theme/colors';
-import type { PatientTabParamList } from '../../navigation/types';
+import type { PatientStackParamList } from '../../navigation/types';
 
-type Props = BottomTabScreenProps<PatientTabParamList, 'RequestVisit'>;
+type Props = NativeStackScreenProps<PatientStackParamList, 'RequestVisit'>;
 
 export function RequestVisitScreen({ navigation, route }: Props) {
   const createVisit = useCreateVisit();
@@ -36,7 +36,7 @@ export function RequestVisitScreen({ navigation, route }: Props) {
     createVisit.mutate(data, {
       onSuccess: () => {
         reset();
-        navigation.navigate('MyVisits');
+        navigation.navigate('PatientTabs', { screen: 'MyVisits' });
       },
     });
   });

@@ -1,86 +1,90 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../../lib/auth-store';
 import { useMyVisits } from '../../hooks/useVisits';
-import { services } from '../../data/services';
 import { trustPoints } from '../../data/trust';
 import { Card } from '../../components/Card';
-import { Button } from '../../components/Button';
 import { VisitStatusBadge } from '../../components/VisitStatusBadge';
 import { colors, fonts } from '../../theme/colors';
-import type { PatientTabParamList } from '../../navigation/types';
+import type { PatientTabScreenProps } from '../../navigation/types';
 
-type Props = BottomTabScreenProps<PatientTabParamList, 'Home'>;
+type Props = PatientTabScreenProps<'Home'>;
 
 export function HomeScreen({ navigation }: Props) {
   const user = useAuthStore((s) => s.user);
   const { data: visits } = useMyVisits();
   const latest = visits?.[0];
+  const rootNav = navigation.getParent();
   const initial = user?.firstName?.charAt(0).toUpperCase() ?? '?';
+
+  const hour = new Date().getHours();
+  const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
     <ScrollView style={styles.flex} contentContainerStyle={styles.scroll}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hi {user?.firstName ?? 'there'} 👋</Text>
-          <Text style={styles.subGreeting}>Doctor home visits, sorted.</Text>
-        </View>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initial}</Text>
+        <Image source={require('../../../assets/logo-icon.png')} style={styles.logo} resizeMode="contain" />
+        <View style={styles.headerActions}>
+          <Pressable style={styles.iconButton} onPress={() => rootNav?.navigate('Notifications')}>
+            <Feather name="bell" size={20} color={colors.ink900} />
+          </Pressable>
+          <Pressable style={styles.avatar} onPress={() => navigation.navigate('Account')}>
+            <Text style={styles.avatarText}>{initial}</Text>
+          </Pressable>
         </View>
       </View>
 
-      <Card style={styles.ctaCard}>
-        <View style={styles.ctaIcon}>
-          <MaterialCommunityIcons name="home-city-outline" size={24} color="#fff" />
-        </View>
-        <Text style={styles.ctaTitle}>Doctors to your doorstep</Text>
-        <Text style={styles.ctaSubtitle}>Request a home visit and an admin will assign a verified doctor to you.</Text>
-        <View style={styles.ctaButton}>
-          <Button title="Request a visit" onPress={() => navigation.navigate('RequestVisit', undefined)} />
-        </View>
+      <Text style={styles.greeting}>{timeGreeting}, {user?.firstName ?? 'there'}</Text>
+      <Text style={styles.subGreeting}>How can we help with your health today?</Text>
+
+      <Card style={styles.locationCard}>
+        <Feather name="map-pin" size={16} color={colors.teal600} />
+        <Text style={styles.locationText}>GharDoc services available in your area</Text>
       </Card>
 
       {latest ? (
-        <>
-          <Text style={styles.sectionTitle}>Latest visit</Text>
-          <Card>
-            <View style={styles.rowBetween}>
+        <Pressable onPress={() => navigation.navigate('MyVisits')}>
+          <Card style={styles.nextVisitCard}>
+            <Text style={styles.nextVisitLabel}>Your next visit</Text>
+            <View style={styles.nextVisitRow}>
               <VisitStatusBadge status={latest.status} />
-              <Text style={styles.timestamp}>{new Date(latest.requestedAt).toLocaleDateString()}</Text>
-            </View>
-            <Text style={styles.reason}>{latest.reasonForVisit}</Text>
-            {latest.doctor ? (
-              <Text style={styles.doctor}>Doctor: {latest.doctor.firstName} {latest.doctor.lastName}</Text>
-            ) : null}
-            <View style={styles.linkButton}>
-              <Button title="View all visits" variant="ghost" onPress={() => navigation.navigate('MyVisits')} />
+              <Text style={styles.nextVisitReason} numberOfLines={1}>{latest.reasonForVisit}</Text>
             </View>
           </Card>
-        </>
+        </Pressable>
       ) : null}
 
-      <Text style={styles.sectionTitle}>Our services</Text>
-      <View style={styles.serviceGrid}>
-        {services.map((s) => (
-          <View key={s.slug} style={styles.serviceTileWrap}>
-            <Pressable
-              onPress={() =>
-                navigation.navigate('RequestVisit', { reasonHint: s.title === 'Doctor Home Visits' ? '' : `${s.title}: ` })
-              }
-              style={({ pressed }) => pressed && styles.pressed}
-            >
-              <Card style={styles.serviceTile}>
-                <View style={styles.serviceIcon}>
-                  <MaterialCommunityIcons name={s.icon} size={22} color={colors.teal600} />
-                </View>
-                <Text style={styles.serviceTitle}>{s.title}</Text>
-                <Text style={styles.serviceSummary} numberOfLines={2}>{s.summary}</Text>
-              </Card>
-            </Pressable>
+      <Text style={styles.sectionTitle}>What do you need today?</Text>
+      <View style={styles.primaryRow}>
+        <Pressable style={styles.primaryTile} onPress={() => navigation.navigate('Doctors')}>
+          <View style={[styles.primaryIcon, { backgroundColor: colors.navy700 }]}>
+            <MaterialCommunityIcons name="doctor" size={24} color="#fff" />
           </View>
-        ))}
+          <Text style={styles.primaryTitle}>Book a Doctor</Text>
+          <Text style={styles.primarySubtitle}>Consult or request a home visit</Text>
+        </Pressable>
+        <Pressable style={styles.primaryTile} onPress={() => navigation.navigate('Diagnostics')}>
+          <View style={[styles.primaryIcon, { backgroundColor: colors.teal600 }]}>
+            <MaterialCommunityIcons name="test-tube" size={24} color="#fff" />
+          </View>
+          <Text style={styles.primaryTitle}>Diagnostics</Text>
+          <Text style={styles.primarySubtitle}>Tests, packages & prices</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.secondaryGrid}>
+        <SecondaryTile
+          icon="needle"
+          label="Nursing Care"
+          onPress={() => rootNav?.navigate('RequestVisit', { reasonHint: 'Nursing care: ' })}
+        />
+        <SecondaryTile icon="folder-heart-outline" label="Health Records" onPress={() => rootNav?.navigate('HealthRecords')} />
+        <SecondaryTile
+          icon="pill"
+          label="Medicine"
+          onPress={() => rootNav?.navigate('StaticInfo', { title: 'Medicine', body: 'Pharmacy ordering is coming soon to GharDoc.' })}
+        />
+        <SecondaryTile icon="ambulance" label="Emergency" danger onPress={() => rootNav?.navigate('Emergency')} />
       </View>
 
       <Text style={styles.sectionTitle}>Why families trust us</Text>
@@ -99,64 +103,60 @@ export function HomeScreen({ navigation }: Props) {
   );
 }
 
+function SecondaryTile({
+  icon,
+  label,
+  onPress,
+  danger,
+}: {
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  label: string;
+  onPress: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <Pressable style={styles.secondaryTile} onPress={onPress}>
+      <Card style={styles.secondaryCard}>
+        <View style={[styles.secondaryIcon, danger && styles.secondaryIconDanger]}>
+          <MaterialCommunityIcons name={icon} size={20} color={danger ? colors.danger : colors.teal600} />
+        </View>
+        <Text style={styles.secondaryLabel}>{label}</Text>
+      </Card>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  pressed: { opacity: 0.85 },
   flex: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: 16, paddingBottom: 32 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 },
+  logo: { width: 40, height: 40 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  iconButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.line },
+  avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.navy700, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontFamily: fonts.bold, color: '#fff', fontSize: 15 },
   greeting: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink900 },
-  subGreeting: { fontFamily: fonts.regular, fontSize: 14, color: colors.ink400, marginTop: 2 },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.navy700,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { fontFamily: fonts.bold, color: '#fff', fontSize: 18 },
-  ctaCard: { backgroundColor: colors.navy700, borderRadius: 20 },
-  ctaIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  ctaTitle: { fontFamily: fonts.bold, fontSize: 18, color: '#fff', marginBottom: 4 },
-  ctaSubtitle: { fontFamily: fonts.regular, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 16 },
-  ctaButton: { alignSelf: 'flex-start', minWidth: 160 },
-  sectionTitle: { fontFamily: fonts.bold, fontSize: 16, color: colors.ink900, marginTop: 20, marginBottom: 10 },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  timestamp: { fontFamily: fonts.regular, fontSize: 12, color: colors.ink400 },
-  reason: { fontFamily: fonts.semiBold, fontSize: 16, color: colors.ink900 },
-  doctor: { fontFamily: fonts.regular, fontSize: 13, color: colors.ink400, marginTop: 4 },
-  linkButton: { marginTop: 12, alignSelf: 'flex-start' },
-  serviceGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
-  serviceTileWrap: { width: '50%', paddingHorizontal: 6 },
-  serviceTile: { minHeight: 130 },
-  serviceIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.teal100,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  serviceTitle: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.ink900, marginBottom: 4 },
-  serviceSummary: { fontFamily: fonts.regular, fontSize: 11, color: colors.ink400, lineHeight: 15 },
+  subGreeting: { fontFamily: fonts.regular, fontSize: 14, color: colors.ink400, marginTop: 2, marginBottom: 16 },
+  locationCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.teal100, paddingVertical: 10 },
+  locationText: { fontFamily: fonts.medium, fontSize: 12, color: colors.navy700, flex: 1 },
+  nextVisitCard: { backgroundColor: colors.card },
+  nextVisitLabel: { fontFamily: fonts.semiBold, fontSize: 11, color: colors.ink400, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 },
+  nextVisitRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  nextVisitReason: { flex: 1, fontFamily: fonts.medium, fontSize: 13, color: colors.ink900 },
+  sectionTitle: { fontFamily: fonts.bold, fontSize: 16, color: colors.ink900, marginTop: 18, marginBottom: 10 },
+  primaryRow: { flexDirection: 'row', gap: 12 },
+  primaryTile: { flex: 1, backgroundColor: colors.card, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: colors.line },
+  primaryIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  primaryTitle: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink900, marginBottom: 2 },
+  primarySubtitle: { fontFamily: fonts.regular, fontSize: 11, color: colors.ink400 },
+  secondaryGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6, marginTop: 12 },
+  secondaryTile: { width: '50%', paddingHorizontal: 6, marginBottom: 12 },
+  secondaryCard: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
+  secondaryIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.teal100, alignItems: 'center', justifyContent: 'center' },
+  secondaryIconDanger: { backgroundColor: colors.dangerBg },
+  secondaryLabel: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.ink900, flexShrink: 1 },
   trustRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 16 },
-  trustIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.sage100,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  trustIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.sage100, alignItems: 'center', justifyContent: 'center' },
   trustText: { flex: 1 },
   trustTitle: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.ink900, marginBottom: 2 },
   trustDescription: { fontFamily: fonts.regular, fontSize: 12, color: colors.ink400, lineHeight: 17 },

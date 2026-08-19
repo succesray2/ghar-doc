@@ -3,7 +3,7 @@ import { useSessionBootstrap } from '../hooks/useAuth';
 import { useAuthStore } from '../lib/auth-store';
 import { colors } from '../theme/colors';
 import { AuthNavigator } from './AuthNavigator';
-import { PatientTabs } from './PatientTabs';
+import { PatientNavigator } from './PatientNavigator';
 import { DoctorTabs } from './DoctorTabs';
 import { AdminNavigator } from './AdminNavigator';
 
@@ -31,7 +31,7 @@ export function RootNavigator() {
     case 'DOCTOR':
       return <DoctorTabs />;
     default:
-      return <PatientTabs />;
+      return <PatientNavigator />;
   }
 }
 
