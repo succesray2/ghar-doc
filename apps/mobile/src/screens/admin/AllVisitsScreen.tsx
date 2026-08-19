@@ -9,7 +9,7 @@ import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { VisitStatusBadge } from '../../components/VisitStatusBadge';
 import { EmptyState } from '../../components/EmptyState';
-import { colors } from '../../theme/colors';
+import { colors, fonts } from '../../theme/colors';
 import type { AdminStackParamList, AdminTabParamList } from '../../navigation/types';
 
 const STATUS_FILTERS: { label: string; value: VisitStatus | undefined }[] = [
@@ -102,13 +102,13 @@ const styles = StyleSheet.create({
   filterRowContent: { paddingHorizontal: 16, gap: 8 },
   pill: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: colors.card, marginRight: 8 },
   pillActive: { backgroundColor: colors.brand600 },
-  pillText: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
+  pillText: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.textMuted },
   pillTextActive: { color: '#fff' },
   list: { padding: 16, flexGrow: 1 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  timestamp: { fontSize: 12, color: colors.textMuted },
-  reason: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 4 },
-  address: { fontSize: 13, color: colors.textMuted },
-  person: { fontSize: 13, color: colors.text, marginTop: 2 },
+  timestamp: { fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted },
+  reason: { fontFamily: fonts.semiBold, fontSize: 16, color: colors.text, marginBottom: 4 },
+  address: { fontFamily: fonts.regular, fontSize: 13, color: colors.textMuted },
+  person: { fontFamily: fonts.regular, fontSize: 13, color: colors.text, marginTop: 2 },
   assignButton: { marginTop: 12, alignSelf: 'flex-start', minWidth: 140 },
 });

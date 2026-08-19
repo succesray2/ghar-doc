@@ -13,7 +13,7 @@ import { useSignupPatient, useSignupDoctor } from '../../hooks/useAuth';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Field } from '../../components/Field';
-import { colors } from '../../theme/colors';
+import { colors, fonts } from '../../theme/colors';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Signup'>;
@@ -138,18 +138,18 @@ const styles = StyleSheet.create({
   card: { padding: 24 },
   header: { alignItems: 'center', marginBottom: 20 },
   logo: { width: 64, height: 64, marginBottom: 8 },
-  title: { fontSize: 26, fontWeight: '800' },
+  title: { fontFamily: fonts.extraBold, fontSize: 26 },
   gharText: { color: colors.gharBlue },
   docText: { color: colors.brand600 },
-  subtitle: { fontSize: 13, color: colors.textMuted, marginTop: 4 },
+  subtitle: { fontFamily: fonts.regular, fontSize: 13, color: colors.textMuted, marginTop: 4 },
   tabRow: { flexDirection: 'row', backgroundColor: colors.bg, borderRadius: 10, padding: 4, marginBottom: 20 },
   tabButton: { flex: 1, borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
   tabButtonActive: { backgroundColor: colors.card },
-  tabLabel: { fontSize: 13, fontWeight: '600', color: colors.textMuted },
+  tabLabel: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.textMuted },
   tabLabelActive: { color: colors.brand700 },
-  note: { fontSize: 12, color: colors.textMuted, marginBottom: 12 },
-  errorText: { color: colors.danger, fontSize: 13, marginBottom: 12 },
+  note: { fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted, marginBottom: 12 },
+  errorText: { fontFamily: fonts.regular, color: colors.danger, fontSize: 13, marginBottom: 12 },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
-  footerText: { color: colors.textMuted, fontSize: 13 },
-  link: { color: colors.brand600, fontWeight: '600', fontSize: 13 },
+  footerText: { fontFamily: fonts.regular, color: colors.textMuted, fontSize: 13 },
+  link: { fontFamily: fonts.semiBold, color: colors.brand600, fontSize: 13 },
 });

@@ -7,7 +7,7 @@ import { useLogin } from '../../hooks/useAuth';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Field } from '../../components/Field';
-import { colors } from '../../theme/colors';
+import { colors, fonts } from '../../theme/colors';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
@@ -87,12 +87,12 @@ const styles = StyleSheet.create({
   card: { padding: 24 },
   header: { alignItems: 'center', marginBottom: 24 },
   logo: { width: 64, height: 64, marginBottom: 8 },
-  title: { fontSize: 26, fontWeight: '800' },
+  title: { fontFamily: fonts.extraBold, fontSize: 26 },
   gharText: { color: colors.gharBlue },
   docText: { color: colors.brand600 },
-  subtitle: { fontSize: 13, color: colors.textMuted, marginTop: 4 },
-  errorText: { color: colors.danger, fontSize: 13, marginBottom: 12 },
+  subtitle: { fontFamily: fonts.regular, fontSize: 13, color: colors.textMuted, marginTop: 4 },
+  errorText: { fontFamily: fonts.regular, color: colors.danger, fontSize: 13, marginBottom: 12 },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
-  footerText: { color: colors.textMuted, fontSize: 13 },
-  link: { color: colors.brand600, fontWeight: '600', fontSize: 13 },
+  footerText: { fontFamily: fonts.regular, color: colors.textMuted, fontSize: 13 },
+  link: { fontFamily: fonts.semiBold, color: colors.brand600, fontSize: 13 },
 });

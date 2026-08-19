@@ -1,5 +1,5 @@
 import { StyleSheet, Text, TextInput, View, type KeyboardTypeOptions } from 'react-native';
-import { colors } from '../theme/colors';
+import { colors, fonts } from '../theme/colors';
 
 interface Props {
   label: string;
@@ -46,18 +46,19 @@ export function Field({
 
 const styles = StyleSheet.create({
   wrap: { marginBottom: 14 },
-  label: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 6 },
+  label: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.text, marginBottom: 6 },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
+    fontFamily: fonts.regular,
     fontSize: 16,
     color: colors.text,
     backgroundColor: colors.card,
   },
   multiline: { minHeight: 80, textAlignVertical: 'top' },
   inputError: { borderColor: colors.danger },
-  error: { color: colors.danger, fontSize: 12, marginTop: 4 },
+  error: { fontFamily: fonts.regular, color: colors.danger, fontSize: 12, marginTop: 4 },
 });

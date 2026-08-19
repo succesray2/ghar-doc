@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -7,19 +8,29 @@ import { useCreateVisit } from '../../hooks/useVisits';
 import { Card } from '../../components/Card';
 import { Field } from '../../components/Field';
 import { Button } from '../../components/Button';
-import { colors } from '../../theme/colors';
+import { colors, fonts } from '../../theme/colors';
 import type { PatientTabParamList } from '../../navigation/types';
 
 type Props = BottomTabScreenProps<PatientTabParamList, 'RequestVisit'>;
 
-export function RequestVisitScreen({ navigation }: Props) {
+export function RequestVisitScreen({ navigation, route }: Props) {
   const createVisit = useCreateVisit();
   const {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<CreateVisitInput>({ resolver: zodResolver(CreateVisitSchema) });
+
+  // Service tiles on Home can deep-link here with a starting hint — the
+  // booking flow is still one generic text field either way (the API has
+  // no per-service intake), this just seeds it instead of leaving it blank.
+  useEffect(() => {
+    if (route.params?.reasonHint) {
+      setValue('reasonForVisit', route.params.reasonHint);
+    }
+  }, [route.params?.reasonHint, setValue]);
 
   const onSubmit = handleSubmit((data) => {
     createVisit.mutate(data, {
@@ -72,6 +83,6 @@ export function RequestVisitScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: 16 },
-  title: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 16 },
+  title: { fontFamily: fonts.bold, fontSize: 18, color: colors.text, marginBottom: 16 },
   errorText: { color: colors.danger, fontSize: 13, marginBottom: 12 },
 });

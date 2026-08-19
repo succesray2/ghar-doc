@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { colors } from '../theme/colors';
+import { colors, fonts } from '../theme/colors';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -43,12 +43,12 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.85 },
   disabled: { opacity: 0.5 },
-  text: { fontSize: 16, fontWeight: '600' },
+  text: { fontFamily: fonts.semiBold, fontSize: 16 },
 });
 
 const variantStyles = StyleSheet.create({
-  primary: { backgroundColor: colors.brand500 },
-  secondary: { backgroundColor: colors.brand100 },
+  primary: { backgroundColor: colors.teal600 },
+  secondary: { backgroundColor: colors.teal100 },
   ghost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
   danger: { backgroundColor: colors.danger },
 });

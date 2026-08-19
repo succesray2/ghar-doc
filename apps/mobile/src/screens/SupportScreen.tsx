@@ -1,7 +1,7 @@
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Card } from '../components/Card';
-import { colors } from '../theme/colors';
+import { colors, fonts } from '../theme/colors';
 
 // Same placeholder contact info as apps/marketing/src/data/content.ts — kept
 // in sync deliberately, not invented separately. Replace both before launch.
@@ -79,27 +79,27 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.85 },
   flex: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: 16 },
-  title: { fontSize: 20, fontWeight: '800', color: colors.text },
-  subtitle: { fontSize: 13, color: colors.textMuted, marginTop: 4, marginBottom: 20 },
+  title: { fontFamily: fonts.extraBold, fontSize: 20, color: colors.text },
+  subtitle: { fontFamily: fonts.regular, fontSize: 13, color: colors.textMuted, marginTop: 4, marginBottom: 20 },
   rowCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  rowCardHighlight: { backgroundColor: colors.brand600 },
+  rowCardHighlight: { backgroundColor: colors.navy700 },
   rowIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.brand100,
+    backgroundColor: colors.teal100,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rowIconHighlight: { backgroundColor: 'rgba(255,255,255,0.2)' },
   rowText: { flex: 1 },
-  rowLabel: { fontSize: 15, fontWeight: '600', color: colors.text },
+  rowLabel: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
   rowLabelHighlight: { color: '#fff' },
-  rowValue: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+  rowValue: { fontFamily: fonts.regular, fontSize: 13, color: colors.textMuted, marginTop: 2 },
   rowValueHighlight: { color: 'rgba(255,255,255,0.85)' },
   emergencyCard: { borderWidth: 1, borderColor: colors.dangerBg, backgroundColor: colors.dangerBg, marginTop: 12 },
   emergencyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  emergencyTitle: { fontSize: 15, fontWeight: '700', color: colors.danger },
-  emergencyText: { fontSize: 13, color: colors.text },
-  emergencyNumber: { fontWeight: '800', color: colors.danger },
+  emergencyTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.danger },
+  emergencyText: { fontFamily: fonts.regular, fontSize: 13, color: colors.text },
+  emergencyNumber: { fontFamily: fonts.extraBold, color: colors.danger },
 });

@@ -5,7 +5,7 @@ import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { VisitStatusBadge } from '../../components/VisitStatusBadge';
 import { EmptyState } from '../../components/EmptyState';
-import { colors } from '../../theme/colors';
+import { colors, fonts } from '../../theme/colors';
 
 const NEXT_ACTION_LABEL: Partial<Record<VisitStatus, string>> = {
   EN_ROUTE: 'Mark en route',
@@ -76,10 +76,10 @@ const styles = StyleSheet.create({
   center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   list: { padding: 16, flexGrow: 1 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  timestamp: { fontSize: 12, color: colors.textMuted },
-  reason: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 4 },
-  address: { fontSize: 13, color: colors.textMuted },
-  patient: { fontSize: 13, color: colors.text, marginTop: 4 },
+  timestamp: { fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted },
+  reason: { fontFamily: fonts.semiBold, fontSize: 16, color: colors.text, marginBottom: 4 },
+  address: { fontFamily: fonts.regular, fontSize: 13, color: colors.textMuted },
+  patient: { fontFamily: fonts.regular, fontSize: 13, color: colors.text, marginTop: 4 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   actionButton: { minWidth: 140 },
 });

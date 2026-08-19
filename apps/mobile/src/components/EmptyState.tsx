@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
+import { colors, fonts } from '../theme/colors';
 import { Button } from './Button';
 
 interface Props {
@@ -35,12 +35,12 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: colors.brand100,
+    backgroundColor: colors.teal100,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
-  title: { fontSize: 17, fontWeight: '700', color: colors.text, marginBottom: 6 },
-  message: { fontSize: 14, color: colors.textMuted, textAlign: 'center', marginBottom: 20 },
+  title: { fontFamily: fonts.bold, fontSize: 17, color: colors.text, marginBottom: 6 },
+  message: { fontFamily: fonts.regular, fontSize: 14, color: colors.textMuted, textAlign: 'center', marginBottom: 20 },
   cta: { minWidth: 180 },
 });
