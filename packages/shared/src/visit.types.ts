@@ -46,3 +46,9 @@ export interface AuthResponseDto {
   accessToken: string;
   user: UserDto;
 }
+
+/** What a mobile client (X-Client-Type: mobile) receives instead of AuthResponseDto — includes the
+ *  refresh token in the body since native apps have no httpOnly-cookie jar to carry it implicitly. */
+export interface AuthResponseMobileDto extends AuthResponseDto {
+  refreshToken: string;
+}

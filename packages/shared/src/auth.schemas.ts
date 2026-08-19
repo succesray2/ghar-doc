@@ -32,3 +32,8 @@ export const SignupDoctorSchema = z.object({
   bio: z.string().optional(),
 });
 export type SignupDoctorInput = z.infer<typeof SignupDoctorSchema>;
+
+export const RefreshSchema = z.object({
+  refreshToken: z.string().optional(),
+});
+export type RefreshInput = z.infer<typeof RefreshSchema>;

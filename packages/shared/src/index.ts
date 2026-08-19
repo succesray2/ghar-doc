@@ -4,9 +4,11 @@ export {
   LoginSchema,
   SignupPatientSchema,
   SignupDoctorSchema,
+  RefreshSchema,
   type LoginInput,
   type SignupPatientInput,
   type SignupDoctorInput,
+  type RefreshInput,
 } from './auth.schemas';
 
 export {
@@ -27,7 +29,7 @@ export {
   type CancelVisitInput,
 } from './visit.schemas';
 
-export type { UserDto, VisitDto, DoctorListItemDto, AuthResponseDto } from './visit.types';
+export type { UserDto, VisitDto, DoctorListItemDto, AuthResponseDto, AuthResponseMobileDto } from './visit.types';
 
 export {
   VISIT_TRANSITIONS,
