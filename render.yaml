@@ -20,9 +20,9 @@ services:
       pnpm install --frozen-lockfile &&
       pnpm --filter @ghar-doc/shared build &&
       pnpm --filter @ghar-doc/api exec prisma generate &&
+      pnpm --filter @ghar-doc/api exec prisma migrate deploy &&
       pnpm --filter @ghar-doc/api build
     startCommand: node apps/api/dist/main.js
-    preDeployCommand: pnpm --filter @ghar-doc/api exec prisma migrate deploy
     envVars:
       - key: NODE_ENV
         value: production
