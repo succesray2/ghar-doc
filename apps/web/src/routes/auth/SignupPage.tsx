@@ -63,6 +63,17 @@ export function SignupPage() {
             Sign in
           </Link>
         </p>
+        <p className="mt-4 text-center text-xs text-slate-400">
+          By creating an account you agree to our{' '}
+          <Link to="/terms" className="hover:underline">
+            Terms & Conditions
+          </Link>{' '}
+          and{' '}
+          <Link to="/privacy" className="hover:underline">
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </Card>
     </div>
   );

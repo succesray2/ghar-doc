@@ -12,6 +12,8 @@ import { AssignedVisitsPage } from './doctor/AssignedVisitsPage';
 import { AdminLayout } from './admin/AdminLayout';
 import { AllVisitsPage } from './admin/AllVisitsPage';
 import { DoctorApplicationsPage } from './admin/DoctorApplicationsPage';
+import { TermsPage } from './legal/TermsPage';
+import { PrivacyPolicyPage } from './legal/PrivacyPolicyPage';
 
 export const router = createBrowserRouter([
   {
@@ -19,6 +21,8 @@ export const router = createBrowserRouter([
     children: [
       { path: '/login', element: <LoginPage /> },
       { path: '/signup', element: <SignupPage /> },
+      { path: '/terms', element: <TermsPage /> },
+      { path: '/privacy', element: <PrivacyPolicyPage /> },
       {
         element: <ProtectedRoute allow={[Role.PATIENT]} />,
         children: [

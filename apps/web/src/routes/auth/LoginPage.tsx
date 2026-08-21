@@ -47,6 +47,15 @@ export function LoginPage() {
             Create an account
           </Link>
         </p>
+        <p className="mt-4 text-center text-xs text-slate-400">
+          <Link to="/terms" className="hover:underline">
+            Terms & Conditions
+          </Link>
+          {' · '}
+          <Link to="/privacy" className="hover:underline">
+            Privacy Policy
+          </Link>
+        </p>
       </Card>
     </div>
   );
