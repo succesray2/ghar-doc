@@ -38,6 +38,8 @@ services:
         value: 30d
       - key: WEB_URL
         value: https://ghar-doc-app.onrender.com
+      - key: SENTRY_DSN
+        sync: false
 
   - type: web
     name: ghar-doc-app
