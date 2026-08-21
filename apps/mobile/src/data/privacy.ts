@@ -36,7 +36,7 @@ Email address, first and last name, phone number (optional), a securely hashed p
 When you set up a patient account or request a visit, we collect the address where the visit should take place — address line 1, address line 2 (optional), city, state, and postal code.
 
 ### Visit information
-When you request a visit, we collect the reason for the visit and any additional notes you choose to write, in your own words. This is free text you provide — we don't currently offer structured symptom checklists or medical-history forms.
+When you request a visit, we collect the reason for the visit and any additional notes you choose to write, in your own words. We also collect structured information about your symptoms — which symptoms you select from a list, how long they've lasted, how severe they are, answers to a small number of follow-up safety questions, and, for some symptom categories, specific readings you choose to enter (for example a blood pressure or temperature reading). This structured information is used only to help flag requests that may need urgent attention before a doctor reviews them — it's a safety-prioritisation signal, not a diagnosis, and every request is still reviewed by a licensed doctor. If you're booking a visit for someone else (a family member), we also collect that person's name, age, and sex, and the caregiver's name and phone number.
 
 ### Doctor information
 For doctor accounts: medical license number, specialty, years of experience, and an optional bio, used to review and approve doctors before they can be assigned visits.
@@ -131,6 +131,8 @@ What we actually do today:
 * The session cookie is httpOnly (not readable by page scripts) and, in production, marked Secure and SameSite=None so it's only sent over encrypted connections.
 * Access to visit and account data is restricted by role in our backend (a patient's API access is limited to their own data; a doctor's to visits assigned to them; admin access is broader, scoped to operating the platform).
 * All traffic to the website, app, and API travels over HTTPS.
+* Repeated failed login attempts are automatically slowed down and, if they continue, temporarily locked out (never permanently) to resist automated password-guessing.
+* Administrative actions that affect your account or a visit (such as approving or suspending a doctor) are logged with who performed them and when, for accountability.
 
 What we do **not** currently claim: we have not undergone a third-party security audit or penetration test, and we do not hold any security certification (e.g. ISO 27001, SOC 2). We're not going to claim either until it's actually true.
 
@@ -156,7 +158,7 @@ Any health articles or guides on the platform are written for general education.
 
 ## 24. Security incidents
 
-If we identify a security incident affecting personal data, we will investigate, contain it, and take steps to secure affected systems. We don't currently have a formally documented, tested incident-response plan — this is flagged as something to put in place, not something we're claiming already exists.
+If we identify a security incident affecting personal data, we will investigate, contain it, and take steps to secure affected systems. We maintain a documented incident-response process (detection, account suspension, session revocation, evidence preservation) — it has not yet been tested against a real incident, and exactly when and how affected users would be notified is still being finalised with legal counsel, consistent with applicable law.
 
 ## 25. Third-party links
 
