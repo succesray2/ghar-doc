@@ -31,8 +31,12 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .node-version
-      - run: pnpm install
+          # pnpm 11.x itself requires Node >= 22.13 to run (unrelated to
+          # what Node version the app deploys under -- Render still runs
+          # this app on the .node-version-pinned Node 20). Decoupled on
+          # purpose; do not change this to read .node-version.
+          node-version: '22'
+      - run: pnpm install --frozen-lockfile
 
       - name: Typecheck every workspace
         run: |
@@ -81,8 +85,12 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .node-version
-      - run: pnpm install
+          # pnpm 11.x itself requires Node >= 22.13 to run (unrelated to
+          # what Node version the app deploys under -- Render still runs
+          # this app on the .node-version-pinned Node 20). Decoupled on
+          # purpose; do not change this to read .node-version.
+          node-version: '22'
+      - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @ghar-doc/shared build
       - run: pnpm --filter @ghar-doc/api exec prisma migrate deploy
       - run: pnpm --filter @ghar-doc/api test:e2e
