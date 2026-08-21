@@ -37,6 +37,12 @@ jobs:
           # purpose; do not change this to read .node-version.
           node-version: '22'
       - run: pnpm install --frozen-lockfile
+      - name: Generate Prisma Client
+        # A fresh checkout has @prisma/client installed but not yet
+        # generated against apps/api/prisma/schema.prisma -- without this,
+        # tsc can't resolve the real generated types (Prisma.InputJsonValue
+        # etc.) and every dependent inference cascades into spurious errors.
+        run: pnpm --filter @ghar-doc/api exec prisma generate
 
       - name: Typecheck every workspace
         run: |
@@ -92,5 +98,6 @@ jobs:
           node-version: '22'
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @ghar-doc/shared build
+      - run: pnpm --filter @ghar-doc/api exec prisma generate
       - run: pnpm --filter @ghar-doc/api exec prisma migrate deploy
       - run: pnpm --filter @ghar-doc/api test:e2e
