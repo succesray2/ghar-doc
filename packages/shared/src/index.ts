@@ -49,8 +49,6 @@ export type {
   AuthResponseMobileDto,
 } from './visit.types';
 
-export { VerifyPaymentSchema, type VerifyPaymentInput } from './payment.schemas';
-
 export {
   TRIAGE_RULE_VERSION,
   TRIAGE_TAXONOMY_NOTICE,
