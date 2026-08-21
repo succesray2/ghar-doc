@@ -9,6 +9,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
+const throttler_1 = require("@nestjs/throttler");
+const core_1 = require("@nestjs/core");
 const env_validation_1 = require("./config/env.validation");
 const prisma_module_1 = require("./prisma/prisma.module");
 const auth_module_1 = require("./auth/auth.module");
@@ -25,12 +27,14 @@ exports.AppModule = AppModule = __decorate([
                 isGlobal: true,
                 validate: env_validation_1.envValidationSchema,
             }),
+            throttler_1.ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
             prisma_module_1.PrismaModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             doctors_module_1.DoctorsModule,
             visits_module_1.VisitsModule,
         ],
+        providers: [{ provide: core_1.APP_GUARD, useClass: throttler_1.ThrottlerGuard }],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

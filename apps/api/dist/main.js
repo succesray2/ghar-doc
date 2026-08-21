@@ -12,6 +12,7 @@ const http_exception_filter_1 = require("./common/filters/http-exception.filter"
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const config = app.get(config_1.ConfigService);
+    app.set('trust proxy', 1);
     app.use((0, cookie_parser_1.default)());
     app.enableCors({
         origin: config.get('WEB_URL'),

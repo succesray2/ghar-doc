@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import {
   SignupPatientSchema,
@@ -22,6 +23,7 @@ const REFRESH_COOKIE = 'refresh_token';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle({ default: { limit: 5, ttl: 3_600_000 } })
   @Post('signup/patient')
   async signupPatient(
     @Body(new ZodValidationPipe(SignupPatientSchema)) body: SignupPatientInput,
@@ -33,6 +35,7 @@ export class AuthController {
     return this.sessionResponse(req, accessToken, refreshToken, user);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 3_600_000 } })
   @Post('signup/doctor')
   async signupDoctor(
     @Body(new ZodValidationPipe(SignupDoctorSchema)) body: SignupDoctorInput,
@@ -44,6 +47,7 @@ export class AuthController {
     return this.sessionResponse(req, accessToken, refreshToken, user);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
@@ -56,6 +60,7 @@ export class AuthController {
     return this.sessionResponse(req, accessToken, refreshToken, user);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(

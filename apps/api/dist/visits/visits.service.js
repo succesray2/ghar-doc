@@ -140,15 +140,18 @@ let VisitsService = class VisitsService {
     async transition(visit, toStatus, actor, extraData = {}) {
         const timestampField = (0, visit_status_util_1.timestampFieldFor)(toStatus);
         const result = await this.prisma.$transaction(async (tx) => {
-            const updated = await tx.visit.update({
-                where: { id: visit.id },
+            const claim = await tx.visit.updateMany({
+                where: { id: visit.id, status: visit.status },
                 data: {
                     status: toStatus,
                     ...(timestampField ? { [timestampField]: new Date() } : {}),
                     ...extraData,
                 },
-                include: VISIT_INCLUDE,
             });
+            if (claim.count === 0) {
+                throw new common_1.ConflictException('This visit was just updated — please refresh and try again.');
+            }
+            const updated = await tx.visit.findUniqueOrThrow({ where: { id: visit.id }, include: VISIT_INCLUDE });
             await tx.visitStatusEvent.create({
                 data: {
                     visitId: visit.id,

@@ -51,6 +51,16 @@ const crypto = __importStar(require("crypto"));
 const shared_1 = require("@ghar-doc/shared");
 const prisma_service_1 = require("../prisma/prisma.service");
 const DURATION_UNIT_MS = { s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 };
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync('not-a-real-password', 10);
+function computeLockedUntil(failedAttempts, now) {
+    if (failedAttempts >= 15)
+        return new Date(now.getTime() + 15 * 60_000);
+    if (failedAttempts >= 10)
+        return new Date(now.getTime() + 5 * 60_000);
+    if (failedAttempts >= 5)
+        return new Date(now.getTime() + 60_000);
+    return null;
+}
 let AuthService = class AuthService {
     prisma;
     jwt;
@@ -109,27 +119,53 @@ let AuthService = class AuthService {
     }
     async login(input) {
         const user = await this.prisma.user.findUnique({ where: { email: input.email } });
-        if (!user || !user.isActive) {
+        const now = new Date();
+        if (!user || !user.isActive || (user.lockedUntil && user.lockedUntil > now)) {
+            await bcrypt.compare(input.password, DUMMY_PASSWORD_HASH);
             throw new common_1.UnauthorizedException('Invalid email or password');
         }
         const passwordValid = await bcrypt.compare(input.password, user.passwordHash);
         if (!passwordValid) {
+            const updated = await this.prisma.user.update({
+                where: { id: user.id },
+                data: { failedLoginAttempts: { increment: 1 } },
+            });
+            const lockedUntil = computeLockedUntil(updated.failedLoginAttempts, now);
+            if (lockedUntil) {
+                await this.prisma.user.update({ where: { id: user.id }, data: { lockedUntil } });
+            }
             throw new common_1.UnauthorizedException('Invalid email or password');
+        }
+        if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+            await this.prisma.user.update({
+                where: { id: user.id },
+                data: { failedLoginAttempts: 0, lockedUntil: null },
+            });
         }
         return this.issueSession(user.id, user.email, user.role);
     }
     async refresh(presentedToken) {
         const tokenHash = this.hashToken(presentedToken);
         const stored = await this.prisma.refreshToken.findUnique({ where: { tokenHash } });
-        if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
+        if (!stored) {
             throw new common_1.UnauthorizedException('Refresh token is invalid or expired');
         }
-        await this.prisma.refreshToken.update({
-            where: { id: stored.id },
+        if (stored.expiresAt < new Date()) {
+            throw new common_1.UnauthorizedException('Refresh token is invalid or expired');
+        }
+        const claim = await this.prisma.refreshToken.updateMany({
+            where: { id: stored.id, revokedAt: null },
             data: { revokedAt: new Date() },
         });
+        if (claim.count === 0) {
+            await this.prisma.refreshToken.updateMany({
+                where: { familyId: stored.familyId, revokedAt: null },
+                data: { revokedAt: new Date() },
+            });
+            throw new common_1.UnauthorizedException('Refresh token is invalid or expired');
+        }
         const user = await this.prisma.user.findUniqueOrThrow({ where: { id: stored.userId } });
-        return this.issueSession(user.id, user.email, user.role);
+        return this.issueSession(user.id, user.email, user.role, stored.familyId);
     }
     async logout(presentedToken) {
         if (!presentedToken)
@@ -152,7 +188,7 @@ let AuthService = class AuthService {
             throw new common_1.ConflictException('An account with this email already exists');
         }
     }
-    async issueSession(userId, email, role) {
+    async issueSession(userId, email, role, familyId) {
         const accessToken = this.jwt.sign({ sub: userId, email, role }, {
             secret: this.config.get('JWT_ACCESS_SECRET'),
             expiresIn: this.config.get('JWT_ACCESS_EXPIRES'),
@@ -161,7 +197,7 @@ let AuthService = class AuthService {
         const tokenHash = this.hashToken(refreshToken);
         const expiresAt = this.addDuration(new Date(), this.config.get('JWT_REFRESH_EXPIRES') ?? '30d');
         await this.prisma.refreshToken.create({
-            data: { userId, tokenHash, expiresAt },
+            data: { userId, tokenHash, expiresAt, familyId: familyId ?? crypto.randomUUID() },
         });
         return { accessToken, refreshToken, user: { id: userId, email, role } };
     }

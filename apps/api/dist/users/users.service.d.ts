@@ -43,6 +43,8 @@ export declare class UsersService {
         lastName: string;
         phone: string | null;
         isActive: boolean;
+        failedLoginAttempts: number;
+        lockedUntil: Date | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -55,6 +57,8 @@ export declare class UsersService {
         lastName: string;
         phone: string | null;
         isActive: boolean;
+        failedLoginAttempts: number;
+        lockedUntil: Date | null;
         createdAt: Date;
         updatedAt: Date;
     }>;

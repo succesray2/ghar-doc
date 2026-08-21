@@ -58,6 +58,8 @@ export declare class AuthService {
         lastName: string;
         phone: string | null;
         isActive: boolean;
+        failedLoginAttempts: number;
+        lockedUntil: Date | null;
         createdAt: Date;
         updatedAt: Date;
     }>;

@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import {
   DoctorStatus,
@@ -168,15 +168,23 @@ export class VisitsService {
     const timestampField = timestampFieldFor(toStatus);
 
     const result = await this.prisma.$transaction(async (tx) => {
-      const updated = await tx.visit.update({
-        where: { id: visit.id },
+      // Conditional update keyed on the status we read earlier — if someone
+      // else already moved this visit since then, `count` comes back 0
+      // instead of silently overwriting their change. Prisma has no native
+      // optimistic-lock field, so a status-guarded updateMany is the
+      // standard substitute.
+      const claim = await tx.visit.updateMany({
+        where: { id: visit.id, status: visit.status as VisitStatus },
         data: {
           status: toStatus,
           ...(timestampField ? { [timestampField]: new Date() } : {}),
           ...extraData,
         },
-        include: VISIT_INCLUDE,
       });
+      if (claim.count === 0) {
+        throw new ConflictException('This visit was just updated — please refresh and try again.');
+      }
+      const updated = await tx.visit.findUniqueOrThrow({ where: { id: visit.id }, include: VISIT_INCLUDE });
 
       await tx.visitStatusEvent.create({
         data: {

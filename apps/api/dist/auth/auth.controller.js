@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
+const throttler_1 = require("@nestjs/throttler");
 const shared_1 = require("@ghar-doc/shared");
 const auth_service_1 = require("./auth.service");
 const zod_validation_pipe_1 = require("../common/pipes/zod-validation.pipe");
@@ -84,6 +85,7 @@ let AuthController = class AuthController {
 };
 exports.AuthController = AuthController;
 __decorate([
+    (0, throttler_1.Throttle)({ default: { limit: 5, ttl: 3_600_000 } }),
     (0, common_1.Post)('signup/patient'),
     __param(0, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(shared_1.SignupPatientSchema))),
     __param(1, (0, common_1.Req)()),
@@ -93,6 +95,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "signupPatient", null);
 __decorate([
+    (0, throttler_1.Throttle)({ default: { limit: 5, ttl: 3_600_000 } }),
     (0, common_1.Post)('signup/doctor'),
     __param(0, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(shared_1.SignupDoctorSchema))),
     __param(1, (0, common_1.Req)()),
@@ -102,6 +105,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "signupDoctor", null);
 __decorate([
+    (0, throttler_1.Throttle)({ default: { limit: 10, ttl: 60_000 } }),
     (0, common_1.Post)('login'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(shared_1.LoginSchema))),
@@ -112,6 +116,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
 __decorate([
+    (0, throttler_1.Throttle)({ default: { limit: 30, ttl: 60_000 } }),
     (0, common_1.Post)('refresh'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(shared_1.RefreshSchema))),

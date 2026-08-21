@@ -23,5 +23,5 @@
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "exclude": ["node_modules", "dist", "prisma"]
+  "exclude": ["node_modules", "dist", "prisma", "test"]
 }
