@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var VisitsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VisitsService = void 0;
 const common_1 = require("@nestjs/common");
@@ -19,8 +20,9 @@ const VISIT_INCLUDE = {
     doctor: { select: { id: true, firstName: true, lastName: true, phone: true } },
     triage: true,
 };
-let VisitsService = class VisitsService {
+let VisitsService = VisitsService_1 = class VisitsService {
     prisma;
+    logger = new common_1.Logger(VisitsService_1.name);
     constructor(prisma) {
         this.prisma = prisma;
     }
@@ -90,7 +92,7 @@ let VisitsService = class VisitsService {
         this.assertCanView(visit, user);
         return this.mapVisit(visit);
     }
-    async assign(id, doctorId, actor) {
+    async assign(id, doctorId, actor, ctx) {
         const visit = await this.getOrThrow(id);
         if (!(0, visit_status_util_1.isTransitionAllowed)(visit.status, shared_1.VisitStatus.ASSIGNED, actor.role)) {
             throw new common_1.BadRequestException(`Cannot assign a visit in status ${visit.status}`);
@@ -99,9 +101,10 @@ let VisitsService = class VisitsService {
         if (!doctorProfile || doctorProfile.status !== shared_1.DoctorStatus.APPROVED) {
             throw new common_1.BadRequestException('Doctor is not approved for assignment');
         }
-        return this.transition(visit, shared_1.VisitStatus.ASSIGNED, actor, { doctorId });
+        this.logger.log(`Visit ${visit.id} assigned to doctor ${doctorId} by admin ${actor.id}`);
+        return this.transition(visit, shared_1.VisitStatus.ASSIGNED, actor, { doctorId }, ctx);
     }
-    async updateStatus(id, status, actor) {
+    async updateStatus(id, status, actor, ctx) {
         const visit = await this.getOrThrow(id);
         if (actor.role === shared_1.Role.DOCTOR && visit.doctorId !== actor.id) {
             throw new common_1.ForbiddenException('You are not assigned to this visit');
@@ -109,9 +112,9 @@ let VisitsService = class VisitsService {
         if (!(0, visit_status_util_1.isTransitionAllowed)(visit.status, status, actor.role)) {
             throw new common_1.BadRequestException(`Cannot move visit from ${visit.status} to ${status}`);
         }
-        return this.transition(visit, status, actor);
+        return this.transition(visit, status, actor, {}, ctx);
     }
-    async cancel(id, actor, reason) {
+    async cancel(id, actor, reason, ctx) {
         const visit = await this.getOrThrow(id);
         if (actor.role === shared_1.Role.PATIENT && visit.patientId !== actor.id) {
             throw new common_1.ForbiddenException('You do not own this visit');
@@ -119,7 +122,7 @@ let VisitsService = class VisitsService {
         if (!(0, visit_status_util_1.isTransitionAllowed)(visit.status, shared_1.VisitStatus.CANCELLED, actor.role)) {
             throw new common_1.BadRequestException(`Cannot cancel a visit in status ${visit.status}`);
         }
-        return this.transition(visit, shared_1.VisitStatus.CANCELLED, actor, { cancellationReason: reason ?? null });
+        return this.transition(visit, shared_1.VisitStatus.CANCELLED, actor, { cancellationReason: reason ?? null }, ctx);
     }
     async safetyStats() {
         const [byPriorityRaw, unassignedRaw, cancelled] = await Promise.all([
@@ -137,7 +140,7 @@ let VisitsService = class VisitsService {
         });
         return { byPriority, cancelled, unassignedByPriority };
     }
-    async transition(visit, toStatus, actor, extraData = {}) {
+    async transition(visit, toStatus, actor, extraData = {}, ctx) {
         const timestampField = (0, visit_status_util_1.timestampFieldFor)(toStatus);
         const result = await this.prisma.$transaction(async (tx) => {
             const claim = await tx.visit.updateMany({
@@ -158,6 +161,8 @@ let VisitsService = class VisitsService {
                     fromStatus: visit.status,
                     toStatus,
                     changedById: actor.id,
+                    ipAddress: ctx?.ip,
+                    userAgent: ctx?.userAgent,
                 },
             });
             return updated;
@@ -196,7 +201,7 @@ let VisitsService = class VisitsService {
     }
 };
 exports.VisitsService = VisitsService;
-exports.VisitsService = VisitsService = __decorate([
+exports.VisitsService = VisitsService = VisitsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], VisitsService);

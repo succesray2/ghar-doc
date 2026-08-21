@@ -1,7 +1,9 @@
 import { DoctorStatus } from '@ghar-doc/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import type { RequestContext } from '../common/types/request-context';
 export declare class DoctorsService {
     private readonly prisma;
+    private readonly logger;
     constructor(prisma: PrismaService);
     list(filters: {
         status?: DoctorStatus;
@@ -26,8 +28,10 @@ export declare class DoctorsService {
         toStatus: import("@prisma/client").$Enums.DoctorStatus;
         reason: string | null;
         changedById: string;
+        ipAddress: string | null;
+        userAgent: string | null;
     }[]>;
-    updateStatus(doctorUserId: string, toStatus: DoctorStatus, reason: string | undefined, actorId: string): Promise<{
+    updateStatus(doctorUserId: string, toStatus: DoctorStatus, reason: string | undefined, actorId: string, ctx?: RequestContext): Promise<{
         status: import("@prisma/client").$Enums.DoctorStatus;
         id: string;
         createdAt: Date;

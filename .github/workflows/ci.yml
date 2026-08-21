@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  PNPM_VERSION: 11
+
+jobs:
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  checks:
+    name: Typecheck, build, dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck every workspace
+        run: |
+          pnpm --filter @ghar-doc/shared exec tsc --noEmit
+          pnpm --filter @ghar-doc/api exec tsc -p tsconfig.json --noEmit
+          pnpm --filter @ghar-doc/web exec tsc --noEmit
+          pnpm --filter @ghar-doc/mobile exec tsc --noEmit
+          pnpm --filter @ghar-doc/marketing exec tsc --noEmit
+
+      - name: Production build verification
+        run: |
+          pnpm --filter @ghar-doc/shared build
+          pnpm --filter @ghar-doc/api build
+          pnpm --filter @ghar-doc/web build
+          pnpm --filter @ghar-doc/marketing build
+
+      - name: Dependency audit (informational)
+        run: pnpm audit --prod || true
+
+  e2e:
+    name: API e2e tests (ephemeral Postgres, never production data)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ghar_doc_ci
+          POSTGRES_PASSWORD: ghar_doc_ci
+          POSTGRES_DB: ghar_doc_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ghar_doc_ci:ghar_doc_ci@localhost:5432/ghar_doc_ci
+      JWT_ACCESS_SECRET: ci-only-access-secret-not-used-anywhere-real-00
+      JWT_REFRESH_SECRET: ci-only-refresh-secret-not-used-anywhere-real-0
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @ghar-doc/shared build
+      - run: pnpm --filter @ghar-doc/api exec prisma migrate deploy
+      - run: pnpm --filter @ghar-doc/api test:e2e

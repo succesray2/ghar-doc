@@ -89,6 +89,8 @@ export declare class AuthController {
         isActive: boolean;
         failedLoginAttempts: number;
         lockedUntil: Date | null;
+        mfaEnabled: boolean;
+        mfaSecret: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;

@@ -46,6 +46,8 @@ export declare class UsersController {
         isActive: boolean;
         failedLoginAttempts: number;
         lockedUntil: Date | null;
+        mfaEnabled: boolean;
+        mfaSecret: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -60,6 +62,8 @@ export declare class UsersController {
         isActive: boolean;
         failedLoginAttempts: number;
         lockedUntil: Date | null;
+        mfaEnabled: boolean;
+        mfaSecret: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;

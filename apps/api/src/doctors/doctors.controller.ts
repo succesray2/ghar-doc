@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import {
   DoctorStatus,
   Role,
@@ -50,8 +51,12 @@ export class DoctorsController {
     @Param('id') id: string,
     @Body(new ZodValidationPipe(UpdateDoctorStatusSchema)) body: UpdateDoctorStatusInput,
     @CurrentUser() admin: AuthenticatedUser,
+    @Req() req: Request,
   ) {
-    return this.doctorsService.updateStatus(id, body.status as DoctorStatus, body.reason, admin.id);
+    return this.doctorsService.updateStatus(id, body.status as DoctorStatus, body.reason, admin.id, {
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
   }
 
   @Roles(Role.DOCTOR)

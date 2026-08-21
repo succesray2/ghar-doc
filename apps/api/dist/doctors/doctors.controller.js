@@ -43,8 +43,11 @@ let DoctorsController = class DoctorsController {
     statusHistory(id) {
         return this.doctorsService.statusHistory(id);
     }
-    updateStatus(id, body, admin) {
-        return this.doctorsService.updateStatus(id, body.status, body.reason, admin.id);
+    updateStatus(id, body, admin, req) {
+        return this.doctorsService.updateStatus(id, body.status, body.reason, admin.id, {
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+        });
     }
     setMyAvailability(user, body) {
         return this.doctorsService.setAvailability(user.id, body.isAvailable);
@@ -74,8 +77,9 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(shared_1.UpdateDoctorStatusSchema))),
     __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __param(3, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, Object, Object, Object]),
     __metadata("design:returntype", void 0)
 ], DoctorsController.prototype, "updateStatus", null);
 __decorate([

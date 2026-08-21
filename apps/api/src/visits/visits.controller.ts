@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import {
   CreateVisitSchema,
   AssignDoctorSchema,
@@ -73,8 +74,9 @@ export class VisitsController {
     @Param('id') id: string,
     @Body(new ZodValidationPipe(AssignDoctorSchema)) body: AssignDoctorInput,
     @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
   ) {
-    return this.visitsService.assign(id, body.doctorId, user);
+    return this.visitsService.assign(id, body.doctorId, user, requestContext(req));
   }
 
   @Roles(Role.DOCTOR)
@@ -83,8 +85,9 @@ export class VisitsController {
     @Param('id') id: string,
     @Body(new ZodValidationPipe(UpdateVisitStatusSchema)) body: UpdateVisitStatusInput,
     @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
   ) {
-    return this.visitsService.updateStatus(id, body.status, user);
+    return this.visitsService.updateStatus(id, body.status, user, requestContext(req));
   }
 
   @Roles(Role.PATIENT, Role.ADMIN)
@@ -93,7 +96,14 @@ export class VisitsController {
     @Param('id') id: string,
     @Body(new ZodValidationPipe(CancelVisitSchema)) body: CancelVisitInput,
     @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
   ) {
-    return this.visitsService.cancel(id, user, body.reason);
+    return this.visitsService.cancel(id, user, body.reason, requestContext(req));
   }
+}
+
+/** IP/user-agent for the audit-trail row — purely forensic, never used for
+ *  any access-control decision. Accurate because main.ts sets trust proxy. */
+function requestContext(req: Request) {
+  return { ip: req.ip, userAgent: req.headers['user-agent'] };
 }

@@ -1,3 +1,4 @@
+import type { Request } from 'express';
 import { type VisitStatus, type CreateVisitInput, type AssignDoctorInput, type UpdateVisitStatusInput, type CancelVisitInput, type TriagePreviewInput } from '@ghar-doc/shared';
 import { VisitsService } from './visits.service';
 import type { AuthenticatedUser } from '../auth/types';
@@ -11,7 +12,7 @@ export declare class VisitsController {
     findAssigned(user: AuthenticatedUser): Promise<any[]>;
     safetyStats(): Promise<import("@ghar-doc/shared").SafetyStatsDto>;
     findOne(id: string, user: AuthenticatedUser): Promise<any>;
-    assign(id: string, body: AssignDoctorInput, user: AuthenticatedUser): Promise<any>;
-    updateStatus(id: string, body: UpdateVisitStatusInput, user: AuthenticatedUser): Promise<any>;
-    cancel(id: string, body: CancelVisitInput, user: AuthenticatedUser): Promise<any>;
+    assign(id: string, body: AssignDoctorInput, user: AuthenticatedUser, req: Request): Promise<any>;
+    updateStatus(id: string, body: UpdateVisitStatusInput, user: AuthenticatedUser, req: Request): Promise<any>;
+    cancel(id: string, body: CancelVisitInput, user: AuthenticatedUser, req: Request): Promise<any>;
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import {
   DoctorStatus,
@@ -14,6 +14,7 @@ import {
 } from '@ghar-doc/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthenticatedUser } from '../auth/types';
+import type { RequestContext } from '../common/types/request-context';
 import { isTransitionAllowed, timestampFieldFor } from './visit-status.util';
 
 const VISIT_INCLUDE = {
@@ -26,6 +27,8 @@ type VisitRow = { id: string; status: string; patientId: string; doctorId: strin
 
 @Injectable()
 export class VisitsService {
+  private readonly logger = new Logger(VisitsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   /** Stateless — no DB write. Used by the booking wizard's Review step for
@@ -105,7 +108,7 @@ export class VisitsService {
     return this.mapVisit(visit);
   }
 
-  async assign(id: string, doctorId: string, actor: AuthenticatedUser) {
+  async assign(id: string, doctorId: string, actor: AuthenticatedUser, ctx?: RequestContext) {
     const visit = await this.getOrThrow(id);
     if (!isTransitionAllowed(visit.status as VisitStatus, VisitStatus.ASSIGNED, actor.role)) {
       throw new BadRequestException(`Cannot assign a visit in status ${visit.status}`);
@@ -114,10 +117,11 @@ export class VisitsService {
     if (!doctorProfile || doctorProfile.status !== DoctorStatus.APPROVED) {
       throw new BadRequestException('Doctor is not approved for assignment');
     }
-    return this.transition(visit, VisitStatus.ASSIGNED, actor, { doctorId });
+    this.logger.log(`Visit ${visit.id} assigned to doctor ${doctorId} by admin ${actor.id}`);
+    return this.transition(visit, VisitStatus.ASSIGNED, actor, { doctorId }, ctx);
   }
 
-  async updateStatus(id: string, status: VisitStatus, actor: AuthenticatedUser) {
+  async updateStatus(id: string, status: VisitStatus, actor: AuthenticatedUser, ctx?: RequestContext) {
     const visit = await this.getOrThrow(id);
     if (actor.role === Role.DOCTOR && visit.doctorId !== actor.id) {
       throw new ForbiddenException('You are not assigned to this visit');
@@ -125,10 +129,10 @@ export class VisitsService {
     if (!isTransitionAllowed(visit.status as VisitStatus, status, actor.role)) {
       throw new BadRequestException(`Cannot move visit from ${visit.status} to ${status}`);
     }
-    return this.transition(visit, status, actor);
+    return this.transition(visit, status, actor, {}, ctx);
   }
 
-  async cancel(id: string, actor: AuthenticatedUser, reason?: string) {
+  async cancel(id: string, actor: AuthenticatedUser, reason?: string, ctx?: RequestContext) {
     const visit = await this.getOrThrow(id);
     if (actor.role === Role.PATIENT && visit.patientId !== actor.id) {
       throw new ForbiddenException('You do not own this visit');
@@ -136,7 +140,7 @@ export class VisitsService {
     if (!isTransitionAllowed(visit.status as VisitStatus, VisitStatus.CANCELLED, actor.role)) {
       throw new BadRequestException(`Cannot cancel a visit in status ${visit.status}`);
     }
-    return this.transition(visit, VisitStatus.CANCELLED, actor, { cancellationReason: reason ?? null });
+    return this.transition(visit, VisitStatus.CANCELLED, actor, { cancellationReason: reason ?? null }, ctx);
   }
 
   async safetyStats(): Promise<SafetyStatsDto> {
@@ -164,6 +168,7 @@ export class VisitsService {
     toStatus: VisitStatus,
     actor: AuthenticatedUser,
     extraData: Record<string, unknown> = {},
+    ctx?: RequestContext,
   ) {
     const timestampField = timestampFieldFor(toStatus);
 
@@ -192,6 +197,8 @@ export class VisitsService {
           fromStatus: visit.status as VisitStatus,
           toStatus,
           changedById: actor.id,
+          ipAddress: ctx?.ip,
+          userAgent: ctx?.userAgent,
         },
       });
 

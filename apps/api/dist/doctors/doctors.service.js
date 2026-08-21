@@ -8,13 +8,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var DoctorsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DoctorsService = void 0;
 const common_1 = require("@nestjs/common");
 const shared_1 = require("@ghar-doc/shared");
 const prisma_service_1 = require("../prisma/prisma.service");
-let DoctorsService = class DoctorsService {
+let DoctorsService = DoctorsService_1 = class DoctorsService {
     prisma;
+    logger = new common_1.Logger(DoctorsService_1.name);
     constructor(prisma) {
         this.prisma = prisma;
     }
@@ -54,13 +56,14 @@ let DoctorsService = class DoctorsService {
             orderBy: { createdAt: 'desc' },
         });
     }
-    async updateStatus(doctorUserId, toStatus, reason, actorId) {
+    async updateStatus(doctorUserId, toStatus, reason, actorId, ctx) {
         const profile = await this.prisma.doctorProfile.findUnique({ where: { userId: doctorUserId } });
         if (!profile)
             throw new common_1.NotFoundException('Doctor not found');
         if (profile.status === toStatus) {
             throw new common_1.BadRequestException(`Doctor is already ${toStatus}`);
         }
+        this.logger.log(`Doctor ${doctorUserId} status ${profile.status} -> ${toStatus} by admin ${actorId}`);
         return this.prisma.$transaction(async (tx) => {
             const updated = await tx.doctorProfile.update({
                 where: { userId: doctorUserId },
@@ -77,6 +80,8 @@ let DoctorsService = class DoctorsService {
                     toStatus,
                     reason,
                     changedById: actorId,
+                    ipAddress: ctx?.ip,
+                    userAgent: ctx?.userAgent,
                 },
             });
             return updated;
@@ -96,7 +101,7 @@ let DoctorsService = class DoctorsService {
     }
 };
 exports.DoctorsService = DoctorsService;
-exports.DoctorsService = DoctorsService = __decorate([
+exports.DoctorsService = DoctorsService = DoctorsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], DoctorsService);

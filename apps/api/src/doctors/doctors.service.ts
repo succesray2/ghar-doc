@@ -1,9 +1,12 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DoctorStatus } from '@ghar-doc/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import type { RequestContext } from '../common/types/request-context';
 
 @Injectable()
 export class DoctorsService {
+  private readonly logger = new Logger(DoctorsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async list(filters: { status?: DoctorStatus; isAvailable?: boolean }) {
@@ -44,12 +47,20 @@ export class DoctorsService {
     });
   }
 
-  async updateStatus(doctorUserId: string, toStatus: DoctorStatus, reason: string | undefined, actorId: string) {
+  async updateStatus(
+    doctorUserId: string,
+    toStatus: DoctorStatus,
+    reason: string | undefined,
+    actorId: string,
+    ctx?: RequestContext,
+  ) {
     const profile = await this.prisma.doctorProfile.findUnique({ where: { userId: doctorUserId } });
     if (!profile) throw new NotFoundException('Doctor not found');
     if (profile.status === toStatus) {
       throw new BadRequestException(`Doctor is already ${toStatus}`);
     }
+
+    this.logger.log(`Doctor ${doctorUserId} status ${profile.status} -> ${toStatus} by admin ${actorId}`);
 
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.doctorProfile.update({
@@ -68,6 +79,8 @@ export class DoctorsService {
           toStatus,
           reason,
           changedById: actorId,
+          ipAddress: ctx?.ip,
+          userAgent: ctx?.userAgent,
         },
       });
 

@@ -41,6 +41,7 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var AuthService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
@@ -61,10 +62,11 @@ function computeLockedUntil(failedAttempts, now) {
         return new Date(now.getTime() + 60_000);
     return null;
 }
-let AuthService = class AuthService {
+let AuthService = AuthService_1 = class AuthService {
     prisma;
     jwt;
     config;
+    logger = new common_1.Logger(AuthService_1.name);
     constructor(prisma, jwt, config) {
         this.prisma = prisma;
         this.jwt = jwt;
@@ -130,9 +132,11 @@ let AuthService = class AuthService {
                 where: { id: user.id },
                 data: { failedLoginAttempts: { increment: 1 } },
             });
+            this.logger.warn(`Failed login for ${user.email} (attempt ${updated.failedLoginAttempts})`);
             const lockedUntil = computeLockedUntil(updated.failedLoginAttempts, now);
             if (lockedUntil) {
                 await this.prisma.user.update({ where: { id: user.id }, data: { lockedUntil } });
+                this.logger.warn(`Account locked until ${lockedUntil.toISOString()} for ${user.email}`);
             }
             throw new common_1.UnauthorizedException('Invalid email or password');
         }
@@ -142,6 +146,7 @@ let AuthService = class AuthService {
                 data: { failedLoginAttempts: 0, lockedUntil: null },
             });
         }
+        this.logger.log(`Successful login for ${user.email}`);
         return this.issueSession(user.id, user.email, user.role);
     }
     async refresh(presentedToken) {
@@ -162,6 +167,7 @@ let AuthService = class AuthService {
                 where: { familyId: stored.familyId, revokedAt: null },
                 data: { revokedAt: new Date() },
             });
+            this.logger.warn(`Refresh-token reuse detected for user ${stored.userId} — token family ${stored.familyId} revoked`);
             throw new common_1.UnauthorizedException('Refresh token is invalid or expired');
         }
         const user = await this.prisma.user.findUniqueOrThrow({ where: { id: stored.userId } });
@@ -212,7 +218,7 @@ let AuthService = class AuthService {
     }
 };
 exports.AuthService = AuthService;
-exports.AuthService = AuthService = __decorate([
+exports.AuthService = AuthService = AuthService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         jwt_1.JwtService,

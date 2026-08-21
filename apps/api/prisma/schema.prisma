@@ -60,6 +60,10 @@ model User {
   isActive     Boolean  @default(true)
   failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
+  // Reserved for a future TOTP implementation — no verification flow
+  // exists yet, these are unused by every current code path.
+  mfaEnabled   Boolean  @default(false)
+  mfaSecret    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -119,6 +123,8 @@ model DoctorStatusEvent {
   reason          String?
   changedById     String
   changedBy       User          @relation(fields: [changedById], references: [id])
+  ipAddress       String?
+  userAgent       String?
   createdAt       DateTime      @default(now())
 }
 
@@ -191,6 +197,8 @@ model VisitStatusEvent {
   changedById String
   changedBy   User         @relation(fields: [changedById], references: [id])
   note        String?
+  ipAddress   String?
+  userAgent   String?
   createdAt   DateTime     @default(now())
 }
 

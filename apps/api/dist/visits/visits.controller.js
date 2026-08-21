@@ -47,14 +47,14 @@ let VisitsController = class VisitsController {
     findOne(id, user) {
         return this.visitsService.findOneForUser(id, user);
     }
-    assign(id, body, user) {
-        return this.visitsService.assign(id, body.doctorId, user);
+    assign(id, body, user, req) {
+        return this.visitsService.assign(id, body.doctorId, user, requestContext(req));
     }
-    updateStatus(id, body, user) {
-        return this.visitsService.updateStatus(id, body.status, user);
+    updateStatus(id, body, user, req) {
+        return this.visitsService.updateStatus(id, body.status, user, requestContext(req));
     }
-    cancel(id, body, user) {
-        return this.visitsService.cancel(id, user, body.reason);
+    cancel(id, body, user, req) {
+        return this.visitsService.cancel(id, user, body.reason, requestContext(req));
     }
 };
 exports.VisitsController = VisitsController;
@@ -120,8 +120,9 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(shared_1.AssignDoctorSchema))),
     __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __param(3, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, Object, Object, Object]),
     __metadata("design:returntype", void 0)
 ], VisitsController.prototype, "assign", null);
 __decorate([
@@ -130,8 +131,9 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(shared_1.UpdateVisitStatusSchema))),
     __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __param(3, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, Object, Object, Object]),
     __metadata("design:returntype", void 0)
 ], VisitsController.prototype, "updateStatus", null);
 __decorate([
@@ -140,8 +142,9 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(shared_1.CancelVisitSchema))),
     __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __param(3, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, Object, Object, Object]),
     __metadata("design:returntype", void 0)
 ], VisitsController.prototype, "cancel", null);
 exports.VisitsController = VisitsController = __decorate([
@@ -149,4 +152,7 @@ exports.VisitsController = VisitsController = __decorate([
     (0, common_1.Controller)('visits'),
     __metadata("design:paramtypes", [visits_service_1.VisitsService])
 ], VisitsController);
+function requestContext(req) {
+    return { ip: req.ip, userAgent: req.headers['user-agent'] };
+}
 //# sourceMappingURL=visits.controller.js.map

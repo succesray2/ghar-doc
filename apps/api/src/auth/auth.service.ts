@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -32,6 +32,8 @@ function computeLockedUntil(failedAttempts: number, now: Date): Date | null {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
@@ -109,9 +111,11 @@ export class AuthService {
         where: { id: user.id },
         data: { failedLoginAttempts: { increment: 1 } },
       });
+      this.logger.warn(`Failed login for ${user.email} (attempt ${updated.failedLoginAttempts})`);
       const lockedUntil = computeLockedUntil(updated.failedLoginAttempts, now);
       if (lockedUntil) {
         await this.prisma.user.update({ where: { id: user.id }, data: { lockedUntil } });
+        this.logger.warn(`Account locked until ${lockedUntil.toISOString()} for ${user.email}`);
       }
       throw new UnauthorizedException('Invalid email or password');
     }
@@ -123,6 +127,7 @@ export class AuthService {
       });
     }
 
+    this.logger.log(`Successful login for ${user.email}`);
     return this.issueSession(user.id, user.email, user.role as Role);
   }
 
@@ -156,6 +161,7 @@ export class AuthService {
         where: { familyId: stored.familyId, revokedAt: null },
         data: { revokedAt: new Date() },
       });
+      this.logger.warn(`Refresh-token reuse detected for user ${stored.userId} — token family ${stored.familyId} revoked`);
       throw new UnauthorizedException('Refresh token is invalid or expired');
     }
 

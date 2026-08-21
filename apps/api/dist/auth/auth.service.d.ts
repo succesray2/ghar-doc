@@ -12,6 +12,7 @@ export declare class AuthService {
     private readonly prisma;
     private readonly jwt;
     private readonly config;
+    private readonly logger;
     constructor(prisma: PrismaService, jwt: JwtService, config: ConfigService);
     signupPatient(input: SignupPatientInput): Promise<Session>;
     signupDoctor(input: SignupDoctorInput): Promise<Session>;
@@ -60,6 +61,8 @@ export declare class AuthService {
         isActive: boolean;
         failedLoginAttempts: number;
         lockedUntil: Date | null;
+        mfaEnabled: boolean;
+        mfaSecret: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;

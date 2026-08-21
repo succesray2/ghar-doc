@@ -1,3 +1,4 @@
+import type { Request } from 'express';
 import { DoctorStatus, type UpdateDoctorAvailabilityInput, type UpdateDoctorStatusInput } from '@ghar-doc/shared';
 import { DoctorsService } from './doctors.service';
 import type { AuthenticatedUser } from '../auth/types';
@@ -24,8 +25,10 @@ export declare class DoctorsController {
         toStatus: import("@prisma/client").$Enums.DoctorStatus;
         reason: string | null;
         changedById: string;
+        ipAddress: string | null;
+        userAgent: string | null;
     }[]>;
-    updateStatus(id: string, body: UpdateDoctorStatusInput, admin: AuthenticatedUser): Promise<{
+    updateStatus(id: string, body: UpdateDoctorStatusInput, admin: AuthenticatedUser, req: Request): Promise<{
         status: import("@prisma/client").$Enums.DoctorStatus;
         id: string;
         createdAt: Date;
