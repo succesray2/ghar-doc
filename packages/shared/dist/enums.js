@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BookingRelation = exports.TriagePriority = exports.PaymentStatus = exports.DoctorStatus = exports.VisitPaymentStatus = exports.VisitStatus = exports.Role = void 0;
+exports.FamilyRelation = exports.NotificationCategory = exports.BookingRelation = exports.TriagePriority = exports.PaymentStatus = exports.DoctorStatus = exports.VisitPaymentStatus = exports.VisitStatus = exports.Role = void 0;
 exports.Role = {
     PATIENT: 'PATIENT',
     DOCTOR: 'DOCTOR',
@@ -9,10 +9,14 @@ exports.Role = {
 exports.VisitStatus = {
     REQUESTED: 'REQUESTED',
     ASSIGNED: 'ASSIGNED',
+    PROVIDER_ACCEPTED: 'PROVIDER_ACCEPTED',
+    PROVIDER_DECLINED: 'PROVIDER_DECLINED',
     EN_ROUTE: 'EN_ROUTE',
+    ARRIVED: 'ARRIVED',
     IN_PROGRESS: 'IN_PROGRESS',
     COMPLETED: 'COMPLETED',
     CANCELLED: 'CANCELLED',
+    NO_PROVIDER_AVAILABLE: 'NO_PROVIDER_AVAILABLE',
 };
 exports.VisitPaymentStatus = {
     UNPAID: 'UNPAID',
@@ -42,4 +46,18 @@ exports.BookingRelation = {
     SPOUSE: 'SPOUSE',
     CHILD: 'CHILD',
     OTHER_FAMILY: 'OTHER_FAMILY',
+};
+exports.NotificationCategory = {
+    BOOKING_UPDATE: 'BOOKING_UPDATE',
+    PROVIDER_ASSIGNMENT: 'PROVIDER_ASSIGNMENT',
+    PROVIDER_ARRIVAL: 'PROVIDER_ARRIVAL',
+    SERVICE_UPDATE: 'SERVICE_UPDATE',
+    PAYMENT_UPDATE: 'PAYMENT_UPDATE',
+    GENERAL: 'GENERAL',
+};
+exports.FamilyRelation = {
+    PARENT: 'PARENT',
+    SPOUSE: 'SPOUSE',
+    CHILD: 'CHILD',
+    OTHER: 'OTHER',
 };

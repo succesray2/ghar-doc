@@ -1,5 +1,5 @@
-import { useMutation } from '@tanstack/react-query';
-import { type UpdateProfileInput, type UserDto } from '@ghar-doc/shared';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type ChangePasswordInput, type SessionDto, type UpdateProfileInput, type UserDto } from '@ghar-doc/shared';
 import { apiClient } from '../lib/api-client';
 import { useAuthStore } from '../lib/auth-store';
 
@@ -16,6 +16,47 @@ export function useUpdateProfile() {
     },
     onSuccess: (user) => {
       if (accessToken) setSession(accessToken, user);
+    },
+  });
+}
+
+export function useSessions() {
+  return useQuery({
+    queryKey: ['auth', 'sessions'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<SessionDto[]>('/auth/sessions');
+      return data;
+    },
+  });
+}
+
+export function useLogoutAllDevices() {
+  const clearSession = useAuthStore((s) => s.clearSession);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      await apiClient.post('/auth/logout-all');
+    },
+    onSuccess: () => {
+      clearSession();
+      queryClient.clear();
+    },
+  });
+}
+
+export function useChangePassword() {
+  const clearSession = useAuthStore((s) => s.clearSession);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: ChangePasswordInput) => {
+      await apiClient.patch('/auth/password', input);
+    },
+    onSuccess: () => {
+      // changePassword() revokes every session server-side, including this one.
+      clearSession();
+      queryClient.clear();
     },
   });
 }

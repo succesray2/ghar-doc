@@ -37,3 +37,9 @@ export const RefreshSchema = z.object({
   refreshToken: z.string().optional(),
 });
 export type RefreshInput = z.infer<typeof RefreshSchema>;
+
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(8),
+  newPassword: z.string().min(8),
+});
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;

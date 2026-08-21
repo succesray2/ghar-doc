@@ -41,11 +41,22 @@ export type PatientStackParamList = {
   EditProfile: undefined;
   StaticInfo: { title: string; body: string };
   Support: undefined;
+  Settings: undefined;
 };
 
 export type DoctorTabParamList = {
   AssignedVisits: undefined;
   Profile: undefined;
+};
+
+// Doctor's tabs live inside a stack (mirroring Admin's) so Settings can be
+// pushed on top rather than needing a 3rd tab.
+export type DoctorStackParamList = {
+  DoctorTabs: undefined;
+  Settings: undefined;
+  EditProfile: undefined;
+  StaticInfo: { title: string; body: string };
+  Support: undefined;
 };
 
 export type AdminTabParamList = {
@@ -54,11 +65,15 @@ export type AdminTabParamList = {
   Profile: undefined;
 };
 
-// Admin's tabs live inside a stack so the doctor-assignment picker can be a
-// modal-presented screen on top, mirroring web's AssignDoctorDialog overlay.
+// Admin's tabs live inside a stack so the doctor-assignment picker (and now
+// Settings) can be pushed/presented on top, mirroring web's AssignDoctorDialog overlay.
 export type AdminStackParamList = {
   AdminTabs: undefined;
   AssignDoctorModal: { visitId: string; reasonForVisit: string };
+  Settings: undefined;
+  EditProfile: undefined;
+  StaticInfo: { title: string; body: string };
+  Support: undefined;
 };
 
 // Shorthand for a patient tab screen that also needs to push onto the

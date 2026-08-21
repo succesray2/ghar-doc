@@ -5,11 +5,22 @@ import { AllVisitsScreen } from '../screens/admin/AllVisitsScreen';
 import { SafetyDashboardScreen } from '../screens/admin/SafetyDashboardScreen';
 import { AssignDoctorModal } from '../screens/admin/AssignDoctorModal';
 import { ProfileScreen } from '../screens/ProfileScreen';
-import { colors } from '../theme/colors';
+import { SettingsScreen } from '../screens/SettingsScreen';
+import { EditProfileScreen } from '../screens/EditProfileScreen';
+import { StaticInfoScreen } from '../screens/StaticInfoScreen';
+import { SupportScreen } from '../screens/SupportScreen';
+import { colors, fonts } from '../theme/colors';
 import type { AdminStackParamList, AdminTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
 const Stack = createNativeStackNavigator<AdminStackParamList>();
+
+const headerOptions = {
+  headerTintColor: colors.ink900,
+  headerTitleStyle: { fontFamily: fonts.bold },
+  headerStyle: { backgroundColor: colors.bg },
+  headerShadowVisible: false,
+} as const;
 
 function AdminTabs() {
   return (
@@ -37,13 +48,17 @@ function AdminTabs() {
 // presented modally on top, mirroring web's AssignDoctorDialog overlay.
 export function AdminNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={headerOptions}>
       <Stack.Screen name="AdminTabs" component={AdminTabs} options={{ headerShown: false }} />
       <Stack.Screen
         name="AssignDoctorModal"
         component={AssignDoctorModal}
         options={{ presentation: 'modal', title: 'Assign Doctor' }}
       />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Edit Profile' }} />
+      <Stack.Screen name="StaticInfo" component={StaticInfoScreen} options={{ title: '' }} />
+      <Stack.Screen name="Support" component={SupportScreen} options={{ title: 'Support' }} />
     </Stack.Navigator>
   );
 }

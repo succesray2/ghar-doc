@@ -85,3 +85,14 @@ export declare const RefreshSchema: z.ZodObject<{
     refreshToken?: string | undefined;
 }>;
 export type RefreshInput = z.infer<typeof RefreshSchema>;
+export declare const ChangePasswordSchema: z.ZodObject<{
+    currentPassword: z.ZodString;
+    newPassword: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    currentPassword: string;
+    newPassword: string;
+}, {
+    currentPassword: string;
+    newPassword: string;
+}>;
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;

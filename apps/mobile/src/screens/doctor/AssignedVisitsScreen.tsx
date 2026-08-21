@@ -1,4 +1,4 @@
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { Role, getLegalTransitions, type VisitDto, type VisitStatus } from '@ghar-doc/shared';
 import { useAssignedVisits, useUpdateVisitStatus } from '../../hooks/useVisits';
 import { Card } from '../../components/Card';
@@ -9,8 +9,11 @@ import { EmptyState } from '../../components/EmptyState';
 import { colors, fonts } from '../../theme/colors';
 
 const NEXT_ACTION_LABEL: Partial<Record<VisitStatus, string>> = {
+  PROVIDER_ACCEPTED: 'Accept',
+  PROVIDER_DECLINED: 'Decline',
   EN_ROUTE: 'Mark en route',
-  IN_PROGRESS: 'Mark arrived / start visit',
+  ARRIVED: 'Mark arrived',
+  IN_PROGRESS: 'Start visit',
   COMPLETED: 'Mark completed',
 };
 
@@ -75,7 +78,21 @@ function VisitCard({ visit, onAdvance, advancing }: { visit: VisitDto; onAdvance
         <View style={styles.actions}>
           {nextTransitions.map((t) => (
             <View key={t.to} style={styles.actionButton}>
-              <Button title={NEXT_ACTION_LABEL[t.to] ?? t.to} onPress={() => onAdvance(t.to)} disabled={advancing} />
+              <Button
+                title={NEXT_ACTION_LABEL[t.to] ?? t.to}
+                variant={t.to === 'PROVIDER_DECLINED' ? 'danger' : 'primary'}
+                disabled={advancing}
+                onPress={() => {
+                  if (t.to === 'PROVIDER_DECLINED') {
+                    Alert.alert('Decline this visit request?', undefined, [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Decline', style: 'destructive', onPress: () => onAdvance(t.to) },
+                    ]);
+                    return;
+                  }
+                  onAdvance(t.to);
+                }}
+              />
             </View>
           ))}
         </View>

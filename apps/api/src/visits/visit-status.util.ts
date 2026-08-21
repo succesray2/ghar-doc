@@ -7,8 +7,12 @@ export function timestampFieldFor(status: VisitStatus): string | null {
   switch (status) {
     case VisitStatus.ASSIGNED:
       return 'assignedAt';
+    case VisitStatus.PROVIDER_ACCEPTED:
+      return 'acceptedAt';
     case VisitStatus.EN_ROUTE:
       return 'enRouteAt';
+    case VisitStatus.ARRIVED:
+      return 'arrivedAt';
     case VisitStatus.IN_PROGRESS:
       return 'inProgressAt';
     case VisitStatus.COMPLETED:

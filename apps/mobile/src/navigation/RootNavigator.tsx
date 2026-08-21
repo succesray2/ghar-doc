@@ -4,7 +4,7 @@ import { useAuthStore } from '../lib/auth-store';
 import { colors } from '../theme/colors';
 import { AuthNavigator } from './AuthNavigator';
 import { PatientNavigator } from './PatientNavigator';
-import { DoctorTabs } from './DoctorTabs';
+import { DoctorNavigator } from './DoctorNavigator';
 import { AdminNavigator } from './AdminNavigator';
 
 // Mirrors apps/web's RootLayout: block all rendering until the session
@@ -29,7 +29,7 @@ export function RootNavigator() {
     case 'ADMIN':
       return <AdminNavigator />;
     case 'DOCTOR':
-      return <DoctorTabs />;
+      return <DoctorNavigator />;
     default:
       return <PatientNavigator />;
   }

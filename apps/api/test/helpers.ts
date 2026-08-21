@@ -97,6 +97,9 @@ export async function cleanupTestRun(prisma: PrismaClient, runId: string) {
   const doctorProfiles = await prisma.doctorProfile.findMany({ where: { userId: { in: userIds } }, select: { id: true } });
   const doctorProfileIds = doctorProfiles.map((d) => d.id);
 
+  await prisma.notification.deleteMany({ where: { userId: { in: userIds } } });
+  await prisma.notificationPreference.deleteMany({ where: { userId: { in: userIds } } });
+  await prisma.familyMember.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.visitStatusEvent.deleteMany({ where: { visitId: { in: visitIds } } });
   await prisma.visitTriage.deleteMany({ where: { visitId: { in: visitIds } } });
   await prisma.visit.deleteMany({ where: { id: { in: visitIds } } });

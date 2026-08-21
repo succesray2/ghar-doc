@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { VisitDto, VisitStatus } from '@ghar-doc/shared';
-import { useAllVisits } from '../../hooks/useVisits';
+import { useAllVisits, useUpdateVisitStatus } from '../../hooks/useVisits';
 import { VisitStatusBadge } from '../../components/VisitStatusBadge';
 import { TriagePriorityBadge } from '../../components/TriagePriorityBadge';
 import { Card } from '../../components/ui/Card';
@@ -13,16 +13,20 @@ const STATUS_FILTERS: { label: string; value: VisitStatus | undefined }[] = [
   { label: 'All', value: undefined },
   { label: 'Requested', value: 'REQUESTED' },
   { label: 'Assigned', value: 'ASSIGNED' },
+  { label: 'Provider accepted', value: 'PROVIDER_ACCEPTED' },
   { label: 'En route', value: 'EN_ROUTE' },
+  { label: 'Arrived', value: 'ARRIVED' },
   { label: 'In progress', value: 'IN_PROGRESS' },
   { label: 'Completed', value: 'COMPLETED' },
   { label: 'Cancelled', value: 'CANCELLED' },
+  { label: 'No provider available', value: 'NO_PROVIDER_AVAILABLE' },
 ];
 
 export function AllVisitsPage() {
   const [status, setStatus] = useState<VisitStatus | undefined>(undefined);
   const { data: visits, isLoading } = useAllVisits(status);
   const [assigning, setAssigning] = useState<VisitDto | null>(null);
+  const updateStatus = useUpdateVisitStatus();
 
   const sortedVisits = useMemo(
     () => (visits ? [...visits].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]) : []),
@@ -78,7 +82,30 @@ export function AllVisitsPage() {
                   </p>
                 )}
               </div>
-              {visit.status === 'REQUESTED' && <Button onClick={() => setAssigning(visit)}>Assign doctor</Button>}
+              {visit.status === 'REQUESTED' && (
+                <div className="flex shrink-0 flex-col gap-2">
+                  <Button onClick={() => setAssigning(visit)}>Assign doctor</Button>
+                  <Button
+                    variant="secondary"
+                    disabled={updateStatus.isPending}
+                    onClick={() => {
+                      if (!window.confirm('Mark this request as unable to assign a provider?')) return;
+                      updateStatus.mutate({ id: visit.id, status: 'NO_PROVIDER_AVAILABLE' });
+                    }}
+                  >
+                    No provider available
+                  </Button>
+                </div>
+              )}
+              {visit.status === 'NO_PROVIDER_AVAILABLE' && (
+                <Button
+                  variant="secondary"
+                  disabled={updateStatus.isPending}
+                  onClick={() => updateStatus.mutate({ id: visit.id, status: 'REQUESTED' })}
+                >
+                  Retry assignment
+                </Button>
+              )}
             </Card>
           ))}
         </div>

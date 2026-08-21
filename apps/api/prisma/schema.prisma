@@ -16,10 +16,38 @@ enum Role {
 enum VisitStatus {
   REQUESTED
   ASSIGNED
+  PROVIDER_ACCEPTED
+  PROVIDER_DECLINED
   EN_ROUTE
+  ARRIVED
   IN_PROGRESS
   COMPLETED
   CANCELLED
+  NO_PROVIDER_AVAILABLE
+}
+
+enum RevokedReason {
+  ROTATED
+  REUSE_DETECTED
+  USER_LOGOUT
+  USER_LOGOUT_ALL
+  PASSWORD_CHANGE
+}
+
+enum NotificationCategory {
+  BOOKING_UPDATE
+  PROVIDER_ASSIGNMENT
+  PROVIDER_ARRIVAL
+  SERVICE_UPDATE
+  PAYMENT_UPDATE
+  GENERAL
+}
+
+enum FamilyRelation {
+  PARENT
+  SPOUSE
+  CHILD
+  OTHER
 }
 
 enum VisitPaymentStatus {
@@ -50,30 +78,33 @@ enum BookingRelation {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  role         Role
-  firstName    String
-  lastName     String
-  phone        String?
-  isActive     Boolean  @default(true)
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  passwordHash        String
+  role                Role
+  firstName           String
+  lastName            String
+  phone               String?
+  isActive            Boolean   @default(true)
   failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
   // Reserved for a future TOTP implementation — no verification flow
   // exists yet, these are unused by every current code path.
-  mfaEnabled   Boolean  @default(false)
-  mfaSecret    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  mfaEnabled          Boolean   @default(false)
+  mfaSecret           String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  patientProfile     PatientProfile?
-  doctorProfile      DoctorProfile?
-  refreshTokens      RefreshToken[]
-  visitsAsPatient    Visit[]             @relation("PatientVisits")
-  visitsAsDoctor     Visit[]             @relation("DoctorVisits")
-  visitStatusEvents  VisitStatusEvent[]
-  doctorStatusEvents DoctorStatusEvent[]
+  patientProfile         PatientProfile?
+  doctorProfile          DoctorProfile?
+  refreshTokens          RefreshToken[]
+  visitsAsPatient        Visit[]                 @relation("PatientVisits")
+  visitsAsDoctor         Visit[]                 @relation("DoctorVisits")
+  visitStatusEvents      VisitStatusEvent[]
+  doctorStatusEvents     DoctorStatusEvent[]
+  familyMembers          FamilyMember[]
+  notifications          Notification[]
+  notificationPreference NotificationPreference?
 }
 
 model PatientProfile {
@@ -154,7 +185,9 @@ model Visit {
   lng                Float?
   requestedAt        DateTime           @default(now())
   assignedAt         DateTime?
+  acceptedAt         DateTime?
   enRouteAt          DateTime?
+  arrivedAt          DateTime?
   inProgressAt       DateTime?
   completedAt        DateTime?
   cancelledAt        DateTime?
@@ -163,6 +196,7 @@ model Visit {
   updatedAt          DateTime           @updatedAt
   statusEvents       VisitStatusEvent[]
   triage             VisitTriage?
+  notifications      Notification[]
 
   @@index([status])
   @@index([patientId])
@@ -203,14 +237,67 @@ model VisitStatusEvent {
 }
 
 model RefreshToken {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id])
-  tokenHash String    @unique
-  familyId  String
-  expiresAt DateTime
-  revokedAt DateTime?
-  createdAt DateTime  @default(now())
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id])
+  tokenHash     String         @unique
+  familyId      String
+  userAgent     String?
+  ip            String?
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  revokedReason RevokedReason?
+  createdAt     DateTime       @default(now())
 
   @@index([familyId])
+  @@index([userId, revokedAt])
+}
+
+// One row per patient-managed family member, used for the "who needs care"
+// booking step. Real, persisted — replaces the earlier session-local mock.
+model FamilyMember {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id])
+  name      String
+  relation  FamilyRelation
+  age       Int?
+  phone     String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([userId])
+}
+
+// A single in-app notification. Real and persisted — this is the only
+// delivery channel today (no SMS/push provider is configured); creation is
+// gated by NotificationPreference at write time, not just stored inertly.
+model Notification {
+  id        String               @id @default(cuid())
+  userId    String
+  user      User                 @relation(fields: [userId], references: [id])
+  category  NotificationCategory
+  title     String
+  body      String
+  visitId   String?
+  visit     Visit?               @relation(fields: [visitId], references: [id])
+  readAt    DateTime?
+  createdAt DateTime             @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+model NotificationPreference {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id])
+  bookingUpdates       Boolean  @default(true)
+  providerAssignment   Boolean  @default(true)
+  providerArrival      Boolean  @default(true)
+  serviceUpdates       Boolean  @default(true)
+  paymentUpdates       Boolean  @default(true)
+  generalNotifications Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }

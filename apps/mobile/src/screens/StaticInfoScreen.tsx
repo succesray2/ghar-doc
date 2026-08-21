@@ -1,10 +1,15 @@
 import { Fragment, useLayoutEffect } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, fonts } from '../theme/colors';
-import type { PatientStackParamList } from '../navigation/types';
 
-type Props = NativeStackScreenProps<PatientStackParamList, 'StaticInfo'>;
+// Registered identically on the Patient, Doctor, and Admin stacks (Terms,
+// Privacy, FAQs, About all reuse this one renderer) — typed against just the
+// shape it actually uses instead of one specific ParamList, so it isn't tied
+// to whichever stack happens to be first to declare it.
+interface Props {
+  route: { params: { title: string; body: string } };
+  navigation: { setOptions: (options: { title: string }) => void };
+}
 
 // Generic reusable screen for anything that's a title + body of text — FAQs,
 // Terms, Privacy Policy, About, health guide articles. Bodies can use a few

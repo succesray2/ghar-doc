@@ -79,7 +79,7 @@ export class VisitsController {
     return this.visitsService.assign(id, body.doctorId, user, requestContext(req));
   }
 
-  @Roles(Role.DOCTOR)
+  @Roles(Role.DOCTOR, Role.ADMIN)
   @Patch(':id/status')
   updateStatus(
     @Param('id') id: string,

@@ -58,7 +58,7 @@ export function AccountScreen({ navigation }: Props) {
 
       <Section title="Account">
         <Row icon="bell-outline" label="Notifications" onPress={() => rootNav?.navigate('Notifications')} />
-        <Row icon="cog-outline" label="Settings" onPress={() => rootNav?.navigate('StaticInfo', { title: 'Settings', body: 'App settings are coming soon.' })} last />
+        <Row icon="cog-outline" label="Settings" onPress={() => rootNav?.navigate('Settings')} last />
       </Section>
 
       <Section title="Help & Legal">

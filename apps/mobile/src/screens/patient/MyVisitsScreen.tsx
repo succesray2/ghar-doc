@@ -21,7 +21,16 @@ const TABS: { key: FilterTab; label: string }[] = [
   { key: 'cancelled', label: 'Cancelled' },
 ];
 
-const UPCOMING_STATUSES: VisitStatus[] = ['REQUESTED', 'ASSIGNED', 'EN_ROUTE', 'IN_PROGRESS'];
+const UPCOMING_STATUSES: VisitStatus[] = [
+  'REQUESTED',
+  'ASSIGNED',
+  'PROVIDER_ACCEPTED',
+  'PROVIDER_DECLINED',
+  'EN_ROUTE',
+  'ARRIVED',
+  'IN_PROGRESS',
+  'NO_PROVIDER_AVAILABLE',
+];
 
 export function MyVisitsScreen({ navigation }: Props) {
   const { data: visits, isLoading, isRefetching, refetch } = useMyVisits();

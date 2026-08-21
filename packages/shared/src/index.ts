@@ -1,14 +1,26 @@
-export { Role, VisitStatus, VisitPaymentStatus, DoctorStatus, PaymentStatus, TriagePriority, BookingRelation } from './enums';
+export {
+  Role,
+  VisitStatus,
+  VisitPaymentStatus,
+  DoctorStatus,
+  PaymentStatus,
+  TriagePriority,
+  BookingRelation,
+  NotificationCategory,
+  FamilyRelation,
+} from './enums';
 
 export {
   LoginSchema,
   SignupPatientSchema,
   SignupDoctorSchema,
   RefreshSchema,
+  ChangePasswordSchema,
   type LoginInput,
   type SignupPatientInput,
   type SignupDoctorInput,
   type RefreshInput,
+  type ChangePasswordInput,
 } from './auth.schemas';
 
 export {
@@ -19,6 +31,18 @@ export {
   type UpdateDoctorAvailabilityInput,
   type UpdateDoctorStatusInput,
 } from './user.schemas';
+
+export {
+  CreateFamilyMemberSchema,
+  UpdateFamilyMemberSchema,
+  type CreateFamilyMemberInput,
+  type UpdateFamilyMemberInput,
+} from './family.schemas';
+
+export {
+  UpdateNotificationPreferencesSchema,
+  type UpdateNotificationPreferencesInput,
+} from './notification.schemas';
 
 export {
   CreateVisitSchema,
@@ -47,6 +71,10 @@ export type {
   SafetyStatsDto,
   AuthResponseDto,
   AuthResponseMobileDto,
+  SessionDto,
+  NotificationDto,
+  NotificationPreferencesDto,
+  FamilyMemberDto,
 } from './visit.types';
 
 export {

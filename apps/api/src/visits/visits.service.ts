@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import type { Prisma } from '@prisma/client';
 import {
   DoctorStatus,
+  NotificationCategory,
   Role,
   VisitStatus,
   TriagePriority,
@@ -13,9 +14,16 @@ import {
   type SafetyStatsDto,
 } from '@ghar-doc/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import type { AuthenticatedUser } from '../auth/types';
 import type { RequestContext } from '../common/types/request-context';
 import { isTransitionAllowed, timestampFieldFor } from './visit-status.util';
+
+/** Short, human-friendly reference for notification copy — derived from the
+ *  real Visit.id, not a separate fake sequential-numbering field. */
+function bookingRef(visitId: string): string {
+  return visitId.slice(-6).toUpperCase();
+}
 
 const VISIT_INCLUDE = {
   patient: { select: { id: true, firstName: true, lastName: true, phone: true } },
@@ -29,7 +37,10 @@ type VisitRow = { id: string; status: string; patientId: string; doctorId: strin
 export class VisitsService {
   private readonly logger = new Logger(VisitsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /** Stateless — no DB write. Used by the booking wizard's Review step for
    *  instant feedback; the server independently recomputes this again on
@@ -67,6 +78,14 @@ export class VisitsService {
       });
       return created;
     });
+
+    await this.notifications.notify(
+      patientId,
+      NotificationCategory.BOOKING_UPDATE,
+      'Request received',
+      `Your GharDoc request has been received. Booking ID: ${bookingRef(visit.id)}. Our team is reviewing your request.`,
+      visit.id,
+    );
 
     return this.mapVisit({
       ...visit,
@@ -118,7 +137,25 @@ export class VisitsService {
       throw new BadRequestException('Doctor is not approved for assignment');
     }
     this.logger.log(`Visit ${visit.id} assigned to doctor ${doctorId} by admin ${actor.id}`);
-    return this.transition(visit, VisitStatus.ASSIGNED, actor, { doctorId }, ctx);
+    const updated = await this.transition(visit, VisitStatus.ASSIGNED, actor, { doctorId }, ctx);
+
+    const ref = bookingRef(visit.id);
+    await this.notifications.notify(
+      visit.patientId,
+      NotificationCategory.PROVIDER_ASSIGNMENT,
+      'Provider assigned',
+      `Your GharDoc request ${ref} has been assigned to a verified professional.`,
+      visit.id,
+    );
+    await this.notifications.notify(
+      doctorId,
+      NotificationCategory.PROVIDER_ASSIGNMENT,
+      'New visit request',
+      `You have a new visit request. Booking ID: ${ref}.`,
+      visit.id,
+    );
+
+    return updated;
   }
 
   async updateStatus(id: string, status: VisitStatus, actor: AuthenticatedUser, ctx?: RequestContext) {
@@ -129,7 +166,61 @@ export class VisitsService {
     if (!isTransitionAllowed(visit.status as VisitStatus, status, actor.role)) {
       throw new BadRequestException(`Cannot move visit from ${visit.status} to ${status}`);
     }
-    return this.transition(visit, status, actor, {}, ctx);
+
+    const ref = bookingRef(visit.id);
+
+    if (status === VisitStatus.PROVIDER_DECLINED) {
+      // Chained, atomic: ASSIGNED->PROVIDER_DECLINED->REQUESTED in the same
+      // transaction, so no reader ever observes a visit resting in
+      // PROVIDER_DECLINED and a mid-flight crash can't strand it there.
+      const updated = await this.chainedTransition(
+        visit,
+        [
+          { toStatus: VisitStatus.PROVIDER_DECLINED, extraData: {} },
+          { toStatus: VisitStatus.REQUESTED, extraData: { doctorId: null } },
+        ],
+        actor,
+        ctx,
+      );
+      await this.notifications.notify(
+        visit.patientId,
+        NotificationCategory.BOOKING_UPDATE,
+        'Request under review',
+        `Your GharDoc request ${ref} is being reviewed for reassignment.`,
+        visit.id,
+      );
+      return updated;
+    }
+
+    const updated = await this.transition(visit, status, actor, {}, ctx);
+
+    if (status === VisitStatus.PROVIDER_ACCEPTED) {
+      await this.notifications.notify(
+        visit.patientId,
+        NotificationCategory.PROVIDER_ASSIGNMENT,
+        'Provider accepted',
+        `Your GharDoc provider has accepted booking ${ref}.`,
+        visit.id,
+      );
+    } else if (status === VisitStatus.ARRIVED) {
+      await this.notifications.notify(
+        visit.patientId,
+        NotificationCategory.PROVIDER_ARRIVAL,
+        'Provider arrived',
+        `Your GharDoc provider has arrived for booking ${ref}.`,
+        visit.id,
+      );
+    } else if (status === VisitStatus.NO_PROVIDER_AVAILABLE) {
+      await this.notifications.notify(
+        visit.patientId,
+        NotificationCategory.BOOKING_UPDATE,
+        'Assignment update',
+        `We are currently unable to assign a provider for booking ${ref}. Our support team will contact you.`,
+        visit.id,
+      );
+    }
+
+    return updated;
   }
 
   async cancel(id: string, actor: AuthenticatedUser, reason?: string, ctx?: RequestContext) {
@@ -170,39 +261,60 @@ export class VisitsService {
     extraData: Record<string, unknown> = {},
     ctx?: RequestContext,
   ) {
-    const timestampField = timestampFieldFor(toStatus);
+    return this.chainedTransition(visit, [{ toStatus, extraData }], actor, ctx);
+  }
 
+  /** Runs a sequence of status hops inside a single transaction — used when
+   *  one actor action must durably resolve to more than one status change
+   *  (e.g. a decline immediately requeuing the visit). Each hop is still
+   *  individually CAS-guarded and gets its own VisitStatusEvent row for a
+   *  full audit trail; nothing in between is ever readable by a concurrent
+   *  request, and a mid-flight crash can't strand the visit on an
+   *  intermediate hop. */
+  private async chainedTransition(
+    visit: VisitRow,
+    hops: { toStatus: VisitStatus; extraData: Record<string, unknown> }[],
+    actor: AuthenticatedUser,
+    ctx?: RequestContext,
+  ) {
     const result = await this.prisma.$transaction(async (tx) => {
-      // Conditional update keyed on the status we read earlier — if someone
-      // else already moved this visit since then, `count` comes back 0
-      // instead of silently overwriting their change. Prisma has no native
-      // optimistic-lock field, so a status-guarded updateMany is the
-      // standard substitute.
-      const claim = await tx.visit.updateMany({
-        where: { id: visit.id, status: visit.status as VisitStatus },
-        data: {
-          status: toStatus,
-          ...(timestampField ? { [timestampField]: new Date() } : {}),
-          ...extraData,
-        },
-      });
-      if (claim.count === 0) {
-        throw new ConflictException('This visit was just updated — please refresh and try again.');
+      let fromStatus = visit.status as VisitStatus;
+
+      for (const hop of hops) {
+        const timestampField = timestampFieldFor(hop.toStatus);
+
+        // Conditional update keyed on the status read at the start of this
+        // hop — if someone else already moved this visit, `count` comes
+        // back 0 instead of silently overwriting their change. Prisma has
+        // no native optimistic-lock field, so a status-guarded updateMany
+        // is the standard substitute.
+        const claim = await tx.visit.updateMany({
+          where: { id: visit.id, status: fromStatus },
+          data: {
+            status: hop.toStatus,
+            ...(timestampField ? { [timestampField]: new Date() } : {}),
+            ...hop.extraData,
+          },
+        });
+        if (claim.count === 0) {
+          throw new ConflictException('This visit was just updated — please refresh and try again.');
+        }
+
+        await tx.visitStatusEvent.create({
+          data: {
+            visitId: visit.id,
+            fromStatus,
+            toStatus: hop.toStatus,
+            changedById: actor.id,
+            ipAddress: ctx?.ip,
+            userAgent: ctx?.userAgent,
+          },
+        });
+
+        fromStatus = hop.toStatus;
       }
-      const updated = await tx.visit.findUniqueOrThrow({ where: { id: visit.id }, include: VISIT_INCLUDE });
 
-      await tx.visitStatusEvent.create({
-        data: {
-          visitId: visit.id,
-          fromStatus: visit.status as VisitStatus,
-          toStatus,
-          changedById: actor.id,
-          ipAddress: ctx?.ip,
-          userAgent: ctx?.userAgent,
-        },
-      });
-
-      return updated;
+      return tx.visit.findUniqueOrThrow({ where: { id: visit.id }, include: VISIT_INCLUDE });
     });
 
     return this.mapVisit(result);

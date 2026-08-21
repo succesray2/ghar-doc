@@ -6,8 +6,11 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 
 const NEXT_ACTION_LABEL: Partial<Record<VisitStatus, string>> = {
+  PROVIDER_ACCEPTED: 'Accept',
+  PROVIDER_DECLINED: 'Decline',
   EN_ROUTE: 'Mark en route',
-  IN_PROGRESS: 'Mark arrived / start visit',
+  ARRIVED: 'Mark arrived',
+  IN_PROGRESS: 'Start visit',
   COMPLETED: 'Mark completed',
 };
 
@@ -55,7 +58,11 @@ export function AssignedVisitsPage() {
                 {nextTransitions.map((t) => (
                   <Button
                     key={t.to}
-                    onClick={() => updateStatus.mutate({ id: visit.id, status: t.to })}
+                    variant={t.to === 'PROVIDER_DECLINED' ? 'danger' : 'primary'}
+                    onClick={() => {
+                      if (t.to === 'PROVIDER_DECLINED' && !window.confirm('Decline this visit request?')) return;
+                      updateStatus.mutate({ id: visit.id, status: t.to });
+                    }}
                     disabled={updateStatus.isPending}
                   >
                     {NEXT_ACTION_LABEL[t.to] ?? t.to}

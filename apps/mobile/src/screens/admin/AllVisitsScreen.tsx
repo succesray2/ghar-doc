@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { VisitDto, VisitStatus } from '@ghar-doc/shared';
-import { useAllVisits } from '../../hooks/useVisits';
+import { useAllVisits, useUpdateVisitStatus } from '../../hooks/useVisits';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { VisitStatusBadge } from '../../components/VisitStatusBadge';
@@ -19,10 +19,13 @@ const STATUS_FILTERS: { label: string; value: VisitStatus | undefined }[] = [
   { label: 'All', value: undefined },
   { label: 'Requested', value: 'REQUESTED' },
   { label: 'Assigned', value: 'ASSIGNED' },
+  { label: 'Provider accepted', value: 'PROVIDER_ACCEPTED' },
   { label: 'En route', value: 'EN_ROUTE' },
+  { label: 'Arrived', value: 'ARRIVED' },
   { label: 'In progress', value: 'IN_PROGRESS' },
   { label: 'Completed', value: 'COMPLETED' },
   { label: 'Cancelled', value: 'CANCELLED' },
+  { label: 'No provider available', value: 'NO_PROVIDER_AVAILABLE' },
 ];
 
 type Props = CompositeScreenProps<
@@ -33,6 +36,7 @@ type Props = CompositeScreenProps<
 export function AllVisitsScreen({ navigation }: Props) {
   const [status, setStatus] = useState<VisitStatus | undefined>(undefined);
   const { data: visits, isLoading, isRefetching, refetch } = useAllVisits(status);
+  const updateStatus = useUpdateVisitStatus();
 
   const sortedVisits = useMemo(
     () => (visits ? [...visits].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]) : []),
@@ -73,6 +77,18 @@ export function AllVisitsScreen({ navigation }: Props) {
             <VisitCard
               visit={visit}
               onAssign={() => navigation.navigate('AssignDoctorModal', { visitId: visit.id, reasonForVisit: visit.reasonForVisit })}
+              onNoProviderAvailable={() =>
+                Alert.alert('Mark as unable to assign?', undefined, [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Confirm',
+                    style: 'destructive',
+                    onPress: () => updateStatus.mutate({ id: visit.id, status: 'NO_PROVIDER_AVAILABLE' }),
+                  },
+                ])
+              }
+              onRetry={() => updateStatus.mutate({ id: visit.id, status: 'REQUESTED' })}
+              busy={updateStatus.isPending}
             />
           )}
         />
@@ -81,7 +97,19 @@ export function AllVisitsScreen({ navigation }: Props) {
   );
 }
 
-function VisitCard({ visit, onAssign }: { visit: VisitDto; onAssign: () => void }) {
+function VisitCard({
+  visit,
+  onAssign,
+  onNoProviderAvailable,
+  onRetry,
+  busy,
+}: {
+  visit: VisitDto;
+  onAssign: () => void;
+  onNoProviderAvailable: () => void;
+  onRetry: () => void;
+  busy: boolean;
+}) {
   return (
     <Card>
       <View style={styles.rowBetween}>
@@ -104,8 +132,18 @@ function VisitCard({ visit, onAssign }: { visit: VisitDto; onAssign: () => void 
         <Text style={styles.flagged}>Flagged: {visit.triageSummary.matchedRedFlags.map((f) => f.label).join('; ')}</Text>
       ) : null}
       {visit.status === 'REQUESTED' ? (
+        <View style={styles.actions}>
+          <View style={styles.actionButton}>
+            <Button title="Assign doctor" onPress={onAssign} disabled={busy} />
+          </View>
+          <View style={styles.actionButton}>
+            <Button title="No provider available" variant="secondary" onPress={onNoProviderAvailable} disabled={busy} />
+          </View>
+        </View>
+      ) : null}
+      {visit.status === 'NO_PROVIDER_AVAILABLE' ? (
         <View style={styles.assignButton}>
-          <Button title="Assign doctor" onPress={onAssign} />
+          <Button title="Retry assignment" variant="secondary" onPress={onRetry} disabled={busy} />
         </View>
       ) : null}
     </Card>
@@ -130,4 +168,6 @@ const styles = StyleSheet.create({
   person: { fontFamily: fonts.regular, fontSize: 13, color: colors.text, marginTop: 2 },
   flagged: { fontFamily: fonts.medium, fontSize: 12, color: colors.danger, marginTop: 4 },
   assignButton: { marginTop: 12, alignSelf: 'flex-start', minWidth: 140 },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  actionButton: { minWidth: 140 },
 });

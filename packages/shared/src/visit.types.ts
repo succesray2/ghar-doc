@@ -1,4 +1,14 @@
-import type { Role, VisitStatus, VisitPaymentStatus, DoctorStatus, PaymentStatus, TriagePriority, BookingRelation } from './enums';
+import type {
+  Role,
+  VisitStatus,
+  VisitPaymentStatus,
+  DoctorStatus,
+  PaymentStatus,
+  TriagePriority,
+  BookingRelation,
+  NotificationCategory,
+  FamilyRelation,
+} from './enums';
 import type { MatchedRedFlag } from './triage-rules';
 
 export interface UserDto {
@@ -41,7 +51,9 @@ export interface VisitDto {
   triageSummary: TriageSummaryDto | null;
   requestedAt: string;
   assignedAt: string | null;
+  acceptedAt: string | null;
   enRouteAt: string | null;
+  arrivedAt: string | null;
   inProgressAt: string | null;
   completedAt: string | null;
   cancelledAt: string | null;
@@ -101,4 +113,39 @@ export interface AuthResponseDto {
  *  refresh token in the body since native apps have no httpOnly-cookie jar to carry it implicitly. */
 export interface AuthResponseMobileDto extends AuthResponseDto {
   refreshToken: string;
+}
+
+export interface SessionDto {
+  id: string;
+  userAgent: string | null;
+  ip: string | null;
+  createdAt: string;
+}
+
+export interface NotificationDto {
+  id: string;
+  category: NotificationCategory;
+  title: string;
+  body: string;
+  visitId: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationPreferencesDto {
+  bookingUpdates: boolean;
+  providerAssignment: boolean;
+  providerArrival: boolean;
+  serviceUpdates: boolean;
+  paymentUpdates: boolean;
+  generalNotifications: boolean;
+}
+
+export interface FamilyMemberDto {
+  id: string;
+  name: string;
+  relation: FamilyRelation;
+  age: number | null;
+  phone: string | null;
+  createdAt: string;
 }

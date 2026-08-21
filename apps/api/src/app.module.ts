@@ -8,6 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { DoctorsModule } from './doctors/doctors.module';
 import { VisitsModule } from './visits/visits.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { FamilyMembersModule } from './family-members/family-members.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { VisitsModule } from './visits/visits.module';
     UsersModule,
     DoctorsModule,
     VisitsModule,
+    NotificationsModule,
+    FamilyMembersModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

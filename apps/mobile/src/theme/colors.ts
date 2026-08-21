@@ -49,8 +49,12 @@ export const fonts = {
 export const statusColors: Record<string, { bg: string; text: string; label: string }> = {
   REQUESTED: { bg: '#fef3c7', text: '#b45309', label: 'Requested' },
   ASSIGNED: { bg: '#dbeafe', text: colors.navy700, label: 'Assigned' },
+  PROVIDER_ACCEPTED: { bg: '#dbeafe', text: colors.navy700, label: 'Provider accepted' },
+  PROVIDER_DECLINED: { bg: '#fee2e2', text: '#b91c1c', label: 'Provider declined' },
   EN_ROUTE: { bg: '#e0e7ff', text: '#4338ca', label: 'En route' },
+  ARRIVED: { bg: '#e0e7ff', text: '#4338ca', label: 'Arrived' },
   IN_PROGRESS: { bg: '#ede9fe', text: '#6d28d9', label: 'In progress' },
   COMPLETED: { bg: colors.sage100, text: colors.sage600, label: 'Completed' },
   CANCELLED: { bg: '#f1f5f9', text: '#475569', label: 'Cancelled' },
+  NO_PROVIDER_AVAILABLE: { bg: '#fee2e2', text: '#b91c1c', label: 'No provider available' },
 };

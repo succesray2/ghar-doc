@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useAuthStore } from '../lib/auth-store';
 import { useLogout } from '../hooks/useAuth';
 import { Card } from '../components/Card';
@@ -11,9 +12,16 @@ const ROLE_LABEL: Record<string, string> = {
   ADMIN: 'Admin',
 };
 
-export function ProfileScreen() {
+// Registered as a tab screen on both the Doctor and Admin stacks — typed
+// against just the one cross-stack navigation call it makes.
+interface Props {
+  navigation: { getParent: () => { navigate: (screen: 'Settings') => void } | undefined };
+}
+
+export function ProfileScreen({ navigation }: Props) {
   const user = useAuthStore((s) => s.user);
   const logout = useLogout();
+  const rootNav = navigation.getParent();
 
   if (!user) return null;
 
@@ -35,6 +43,14 @@ export function ProfileScreen() {
         <Row label="Email" value={user.email} />
         <Row label="Phone" value={user.phone ?? '—'} last />
       </Card>
+
+      <Pressable onPress={() => rootNav?.navigate('Settings')}>
+        <Card style={styles.settingsRow}>
+          <Feather name="settings" size={18} color={colors.navy700} />
+          <Text style={styles.settingsLabel}>Settings</Text>
+          <Feather name="chevron-right" size={18} color={colors.ink400} />
+        </Card>
+      </Pressable>
 
       <View style={styles.logoutWrap}>
         <Button
@@ -77,5 +93,7 @@ const styles = StyleSheet.create({
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
   rowLabel: { fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted, marginBottom: 2 },
   rowValue: { fontFamily: fonts.medium, fontSize: 15, color: colors.text },
+  settingsRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  settingsLabel: { flex: 1, fontFamily: fonts.medium, fontSize: 14, color: colors.ink900 },
   logoutWrap: { marginTop: 24 },
 });

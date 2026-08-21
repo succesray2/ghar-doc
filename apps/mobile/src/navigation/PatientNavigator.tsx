@@ -14,6 +14,7 @@ import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { HealthGuidesScreen } from '../screens/HealthGuidesScreen';
 import { EmergencyScreen } from '../screens/EmergencyScreen';
 import { EditProfileScreen } from '../screens/EditProfileScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 import { StaticInfoScreen } from '../screens/StaticInfoScreen';
 import { SupportScreen } from '../screens/SupportScreen';
 import { colors, fonts } from '../theme/colors';
@@ -46,6 +47,7 @@ export function PatientNavigator() {
       <Stack.Screen name="HealthGuides" component={HealthGuidesScreen} options={{ title: 'Health Guides' }} />
       <Stack.Screen name="Emergency" component={EmergencyScreen} options={{ title: 'Emergency' }} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Edit Profile' }} />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       <Stack.Screen name="StaticInfo" component={StaticInfoScreen} options={{ title: '' }} />
       <Stack.Screen name="Support" component={SupportScreen} options={{ title: 'Support' }} />
     </Stack.Navigator>

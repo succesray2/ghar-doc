@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { useAuthStore } from '../lib/auth-store';
 import { useLogout } from '../hooks/useAuth';
 import { Button } from './ui/Button';
+import { NotificationBell } from './NotificationBell';
 
 interface NavItem {
   to: string;
@@ -43,6 +44,7 @@ export function AppShell({ navItems, roleLabel }: { navItems: NavItem[]; roleLab
             </nav>
           </div>
           <div className="flex items-center gap-3 text-sm">
+            <NotificationBell />
             <span className="text-slate-500">
               {user?.firstName} {user?.lastName} · {roleLabel}
             </span>

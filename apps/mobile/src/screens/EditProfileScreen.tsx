@@ -1,7 +1,6 @@
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { UpdateProfileSchema, type UpdateProfileInput } from '@ghar-doc/shared';
 import { useAuthStore } from '../lib/auth-store';
 import { useUpdateProfile } from '../hooks/useProfile';
@@ -9,9 +8,12 @@ import { Card } from '../components/Card';
 import { Field } from '../components/Field';
 import { Button } from '../components/Button';
 import { colors, fonts } from '../theme/colors';
-import type { PatientStackParamList } from '../navigation/types';
 
-type Props = NativeStackScreenProps<PatientStackParamList, 'EditProfile'>;
+// Registered on the Patient, Doctor, and Admin stacks — typed against just
+// the one navigation method it calls rather than one specific ParamList.
+interface Props {
+  navigation: { goBack: () => void };
+}
 
 export function EditProfileScreen({ navigation }: Props) {
   const user = useAuthStore((s) => s.user);

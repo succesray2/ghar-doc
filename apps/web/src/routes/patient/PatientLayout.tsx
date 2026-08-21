@@ -7,6 +7,7 @@ export function PatientLayout() {
       navItems={[
         { to: '/patient/visits', label: 'My Visits' },
         { to: '/patient/request', label: 'Request a Visit' },
+        { to: '/patient/settings', label: 'Settings' },
       ]}
     />
   );

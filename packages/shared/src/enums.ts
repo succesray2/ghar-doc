@@ -8,10 +8,14 @@ export type Role = (typeof Role)[keyof typeof Role];
 export const VisitStatus = {
   REQUESTED: 'REQUESTED',
   ASSIGNED: 'ASSIGNED',
+  PROVIDER_ACCEPTED: 'PROVIDER_ACCEPTED',
+  PROVIDER_DECLINED: 'PROVIDER_DECLINED',
   EN_ROUTE: 'EN_ROUTE',
+  ARRIVED: 'ARRIVED',
   IN_PROGRESS: 'IN_PROGRESS',
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',
+  NO_PROVIDER_AVAILABLE: 'NO_PROVIDER_AVAILABLE',
 } as const;
 export type VisitStatus = (typeof VisitStatus)[keyof typeof VisitStatus];
 
@@ -53,3 +57,21 @@ export const BookingRelation = {
   OTHER_FAMILY: 'OTHER_FAMILY',
 } as const;
 export type BookingRelation = (typeof BookingRelation)[keyof typeof BookingRelation];
+
+export const NotificationCategory = {
+  BOOKING_UPDATE: 'BOOKING_UPDATE',
+  PROVIDER_ASSIGNMENT: 'PROVIDER_ASSIGNMENT',
+  PROVIDER_ARRIVAL: 'PROVIDER_ARRIVAL',
+  SERVICE_UPDATE: 'SERVICE_UPDATE',
+  PAYMENT_UPDATE: 'PAYMENT_UPDATE',
+  GENERAL: 'GENERAL',
+} as const;
+export type NotificationCategory = (typeof NotificationCategory)[keyof typeof NotificationCategory];
+
+export const FamilyRelation = {
+  PARENT: 'PARENT',
+  SPOUSE: 'SPOUSE',
+  CHILD: 'CHILD',
+  OTHER: 'OTHER',
+} as const;
+export type FamilyRelation = (typeof FamilyRelation)[keyof typeof FamilyRelation];

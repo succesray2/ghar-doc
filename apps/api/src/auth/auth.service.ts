@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -6,6 +6,7 @@ import * as crypto from 'crypto';
 import { Role, type SignupPatientInput, type SignupDoctorInput, type LoginInput } from '@ghar-doc/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthenticatedUser } from './types';
+import type { RequestContext } from '../common/types/request-context';
 
 interface Session {
   accessToken: string;
@@ -40,7 +41,7 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-  async signupPatient(input: SignupPatientInput): Promise<Session> {
+  async signupPatient(input: SignupPatientInput, ctx?: RequestContext): Promise<Session> {
     await this.assertEmailFree(input.email);
     const passwordHash = await bcrypt.hash(input.password, 10);
 
@@ -64,10 +65,10 @@ export class AuthService {
       },
     });
 
-    return this.issueSession(user.id, user.email, user.role as Role);
+    return this.issueSession(user.id, user.email, user.role as Role, undefined, ctx);
   }
 
-  async signupDoctor(input: SignupDoctorInput): Promise<Session> {
+  async signupDoctor(input: SignupDoctorInput, ctx?: RequestContext): Promise<Session> {
     await this.assertEmailFree(input.email);
     const passwordHash = await bcrypt.hash(input.password, 10);
 
@@ -90,10 +91,10 @@ export class AuthService {
       },
     });
 
-    return this.issueSession(user.id, user.email, user.role as Role);
+    return this.issueSession(user.id, user.email, user.role as Role, undefined, ctx);
   }
 
-  async login(input: LoginInput): Promise<Session> {
+  async login(input: LoginInput, ctx?: RequestContext): Promise<Session> {
     const user = await this.prisma.user.findUnique({ where: { email: input.email } });
     const now = new Date();
 
@@ -128,7 +129,7 @@ export class AuthService {
     }
 
     this.logger.log(`Successful login for ${user.email}`);
-    return this.issueSession(user.id, user.email, user.role as Role);
+    return this.issueSession(user.id, user.email, user.role as Role, undefined, ctx);
   }
 
   /** Refresh tokens are opaque random strings, stored only as a hash — rotated on every use.
@@ -137,7 +138,7 @@ export class AuthService {
    *  rotated away gets presented again, that's reuse of a stolen/leaked token — the entire
    *  token family (every rotation descended from the same login) is revoked, forcing a full
    *  re-login rather than silently trusting the replay. */
-  async refresh(presentedToken: string): Promise<Session> {
+  async refresh(presentedToken: string, ctx?: RequestContext): Promise<Session> {
     const tokenHash = this.hashToken(presentedToken);
     const stored = await this.prisma.refreshToken.findUnique({ where: { tokenHash } });
 
@@ -150,7 +151,7 @@ export class AuthService {
 
     const claim = await this.prisma.refreshToken.updateMany({
       where: { id: stored.id, revokedAt: null },
-      data: { revokedAt: new Date() },
+      data: { revokedAt: new Date(), revokedReason: 'ROTATED' },
     });
 
     if (claim.count === 0) {
@@ -159,14 +160,14 @@ export class AuthService {
       // family. Kill the whole lineage.
       await this.prisma.refreshToken.updateMany({
         where: { familyId: stored.familyId, revokedAt: null },
-        data: { revokedAt: new Date() },
+        data: { revokedAt: new Date(), revokedReason: 'REUSE_DETECTED' },
       });
       this.logger.warn(`Refresh-token reuse detected for user ${stored.userId} — token family ${stored.familyId} revoked`);
       throw new UnauthorizedException('Refresh token is invalid or expired');
     }
 
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: stored.userId } });
-    return this.issueSession(user.id, user.email, user.role as Role, stored.familyId);
+    return this.issueSession(user.id, user.email, user.role as Role, stored.familyId, ctx);
   }
 
   async logout(presentedToken: string | null): Promise<void> {
@@ -174,8 +175,55 @@ export class AuthService {
     const tokenHash = this.hashToken(presentedToken);
     await this.prisma.refreshToken.updateMany({
       where: { tokenHash, revokedAt: null },
-      data: { revokedAt: new Date() },
+      data: { revokedAt: new Date(), revokedReason: 'USER_LOGOUT' },
     });
+  }
+
+  /** Revokes every live session for this user, on every device — not just
+   *  the current one. Distinguished from reuse-detection's family-kill via
+   *  revokedReason, so a bulk logout-all is never misread as token theft in
+   *  the security logs. */
+  async logoutAll(userId: string): Promise<void> {
+    await this.prisma.refreshToken.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date(), revokedReason: 'USER_LOGOUT_ALL' },
+    });
+  }
+
+  /** Live, non-expired sessions for this user — one row roughly corresponds
+   *  to one signed-in device, since every refresh rotates the prior row for
+   *  that device's family away. No "is this my current device" flag yet —
+   *  would need a session/family claim added to the access-token JWT and
+   *  threaded through every AuthenticatedUser consumer, deliberately kept
+   *  out of this pass's blast radius. */
+  async listSessions(userId: string) {
+    return this.prisma.refreshToken.findMany({
+      where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, userAgent: true, ip: true, createdAt: true },
+    });
+  }
+
+  /** Re-verifies the current password before accepting a new one, then
+   *  revokes every live session (including the current one) so the new
+   *  password is required everywhere going forward — simpler and equally
+   *  defensible than "all except current," which would need the same
+   *  session-claim plumbing noted on listSessions(). */
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: userId }, data: { passwordHash } }),
+      this.prisma.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date(), revokedReason: 'PASSWORD_CHANGE' },
+      }),
+    ]);
+    this.logger.log(`Password changed for user ${userId} — all sessions revoked`);
   }
 
   async me(userId: string) {
@@ -192,7 +240,13 @@ export class AuthService {
     }
   }
 
-  private async issueSession(userId: string, email: string, role: Role, familyId?: string): Promise<Session> {
+  private async issueSession(
+    userId: string,
+    email: string,
+    role: Role,
+    familyId?: string,
+    ctx?: RequestContext,
+  ): Promise<Session> {
     const accessToken = this.jwt.sign(
       { sub: userId, email, role },
       {
@@ -206,7 +260,14 @@ export class AuthService {
     const expiresAt = this.addDuration(new Date(), this.config.get<string>('JWT_REFRESH_EXPIRES') ?? '30d');
 
     await this.prisma.refreshToken.create({
-      data: { userId, tokenHash, expiresAt, familyId: familyId ?? crypto.randomUUID() },
+      data: {
+        userId,
+        tokenHash,
+        expiresAt,
+        familyId: familyId ?? crypto.randomUUID(),
+        userAgent: ctx?.userAgent,
+        ip: ctx?.ip,
+      },
     });
 
     return { accessToken, refreshToken, user: { id: userId, email, role } };

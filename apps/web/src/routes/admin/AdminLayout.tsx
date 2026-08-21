@@ -8,6 +8,7 @@ export function AdminLayout() {
         { to: '/admin/visits', label: 'All Visits' },
         { to: '/admin/doctors', label: 'Doctor Applications' },
         { to: '/admin/safety', label: 'Safety Dashboard' },
+        { to: '/admin/settings', label: 'Settings' },
       ]}
     />
   );

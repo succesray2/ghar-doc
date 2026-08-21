@@ -7,12 +7,15 @@ import { SignupPage } from './auth/SignupPage';
 import { PatientLayout } from './patient/PatientLayout';
 import { RequestVisitPage } from './patient/RequestVisitPage';
 import { MyVisitsPage } from './patient/MyVisitsPage';
+import { PatientSettingsPage } from './patient/PatientSettingsPage';
 import { DoctorLayout } from './doctor/DoctorLayout';
 import { AssignedVisitsPage } from './doctor/AssignedVisitsPage';
+import { DoctorSettingsPage } from './doctor/DoctorSettingsPage';
 import { AdminLayout } from './admin/AdminLayout';
 import { AllVisitsPage } from './admin/AllVisitsPage';
 import { DoctorApplicationsPage } from './admin/DoctorApplicationsPage';
 import { SafetyDashboardPage } from './admin/SafetyDashboardPage';
+import { AdminSettingsPage } from './admin/AdminSettingsPage';
 import { TermsPage } from './legal/TermsPage';
 import { PrivacyPolicyPage } from './legal/PrivacyPolicyPage';
 
@@ -34,6 +37,7 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to="visits" replace /> },
               { path: 'request', element: <RequestVisitPage /> },
               { path: 'visits', element: <MyVisitsPage /> },
+              { path: 'settings', element: <PatientSettingsPage /> },
             ],
           },
         ],
@@ -47,6 +51,7 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="visits" replace /> },
               { path: 'visits', element: <AssignedVisitsPage /> },
+              { path: 'settings', element: <DoctorSettingsPage /> },
             ],
           },
         ],
@@ -62,6 +67,7 @@ export const router = createBrowserRouter([
               { path: 'visits', element: <AllVisitsPage /> },
               { path: 'doctors', element: <DoctorApplicationsPage /> },
               { path: 'safety', element: <SafetyDashboardPage /> },
+              { path: 'settings', element: <AdminSettingsPage /> },
             ],
           },
         ],
