@@ -32,7 +32,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
-          cache: pnpm
       - run: pnpm install --frozen-lockfile
 
       - name: Typecheck every workspace
@@ -83,7 +82,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
-          cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @ghar-doc/shared build
       - run: pnpm --filter @ghar-doc/api exec prisma migrate deploy
