@@ -26,3 +26,24 @@ export declare const DoctorStatus: {
     readonly SUSPENDED: "SUSPENDED";
 };
 export type DoctorStatus = (typeof DoctorStatus)[keyof typeof DoctorStatus];
+export declare const PaymentStatus: {
+    readonly CREATED: "CREATED";
+    readonly PAID: "PAID";
+    readonly FAILED: "FAILED";
+    readonly REFUNDED: "REFUNDED";
+};
+export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
+export declare const TriagePriority: {
+    readonly GREEN: "GREEN";
+    readonly ORANGE: "ORANGE";
+    readonly RED: "RED";
+};
+export type TriagePriority = (typeof TriagePriority)[keyof typeof TriagePriority];
+export declare const BookingRelation: {
+    readonly SELF: "SELF";
+    readonly PARENT: "PARENT";
+    readonly SPOUSE: "SPOUSE";
+    readonly CHILD: "CHILD";
+    readonly OTHER_FAMILY: "OTHER_FAMILY";
+};
+export type BookingRelation = (typeof BookingRelation)[keyof typeof BookingRelation];

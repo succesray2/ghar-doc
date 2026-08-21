@@ -4,12 +4,14 @@ import {
   AssignDoctorSchema,
   UpdateVisitStatusSchema,
   CancelVisitSchema,
+  TriagePreviewSchema,
   Role,
   type VisitStatus,
   type CreateVisitInput,
   type AssignDoctorInput,
   type UpdateVisitStatusInput,
   type CancelVisitInput,
+  type TriagePreviewInput,
 } from '@ghar-doc/shared';
 import { VisitsService } from './visits.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -30,6 +32,12 @@ export class VisitsController {
     return this.visitsService.create(user.id, body);
   }
 
+  @Roles(Role.PATIENT)
+  @Post('triage-preview')
+  previewTriage(@Body(new ZodValidationPipe(TriagePreviewSchema)) body: TriagePreviewInput) {
+    return this.visitsService.previewTriage(body.triageAnswers);
+  }
+
   @Roles(Role.ADMIN)
   @Get()
   findAll(@Query('status') status?: VisitStatus) {
@@ -46,6 +54,12 @@ export class VisitsController {
   @Get('assigned')
   findAssigned(@CurrentUser() user: AuthenticatedUser) {
     return this.visitsService.findAssigned(user.id);
+  }
+
+  @Roles(Role.ADMIN)
+  @Get('safety-stats')
+  safetyStats() {
+    return this.visitsService.safetyStats();
   }
 
   @Get(':id')

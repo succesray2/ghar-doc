@@ -1,4 +1,5 @@
-import type { Role, VisitStatus, VisitPaymentStatus, DoctorStatus } from './enums';
+import type { Role, VisitStatus, VisitPaymentStatus, DoctorStatus, PaymentStatus, TriagePriority, BookingRelation } from './enums';
+import type { MatchedRedFlag } from './triage-rules';
 export interface UserDto {
     id: string;
     email: string;
@@ -8,10 +9,22 @@ export interface UserDto {
     phone: string | null;
 }
 type VisitPartyDto = Pick<UserDto, 'id' | 'firstName' | 'lastName' | 'phone'>;
+export interface TriageSummaryDto {
+    priority: TriagePriority;
+    matchedRedFlags: MatchedRedFlag[];
+    symptomIds: string[];
+}
 export interface VisitDto {
     id: string;
     status: VisitStatus;
     paymentStatus: VisitPaymentStatus;
+    priority: TriagePriority;
+    bookingFor: BookingRelation;
+    patientName: string | null;
+    patientAge: number | null;
+    patientSex: string | null;
+    caregiverName: string | null;
+    caregiverPhone: string | null;
     reasonForVisit: string;
     notes: string | null;
     addressLine1: string;
@@ -21,6 +34,7 @@ export interface VisitDto {
     postalCode: string;
     patient: VisitPartyDto;
     doctor: VisitPartyDto | null;
+    triageSummary: TriageSummaryDto | null;
     requestedAt: string;
     assignedAt: string | null;
     enRouteAt: string | null;
@@ -28,6 +42,11 @@ export interface VisitDto {
     completedAt: string | null;
     cancelledAt: string | null;
     cancellationReason: string | null;
+}
+export interface SafetyStatsDto {
+    byPriority: Record<TriagePriority, number>;
+    cancelled: number;
+    unassignedByPriority: Record<TriagePriority, number>;
 }
 export interface DoctorListItemDto {
     id: string;
@@ -48,6 +67,20 @@ export interface DoctorStatusEventDto {
     reason: string | null;
     changedById: string;
     createdAt: string;
+}
+export interface PaymentDto {
+    id: string;
+    visitId: string;
+    amount: number;
+    currency: string;
+    status: PaymentStatus;
+    createdAt: string;
+}
+export interface CreatePaymentOrderDto {
+    orderId: string;
+    amount: number;
+    currency: string;
+    keyId: string;
 }
 export interface AuthResponseDto {
     accessToken: string;

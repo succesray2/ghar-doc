@@ -35,6 +35,20 @@ enum DoctorStatus {
   SUSPENDED
 }
 
+enum TriagePriority {
+  GREEN
+  ORANGE
+  RED
+}
+
+enum BookingRelation {
+  SELF
+  PARENT
+  SPOUSE
+  CHILD
+  OTHER_FAMILY
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -114,6 +128,13 @@ model Visit {
   doctor             User?              @relation("DoctorVisits", fields: [doctorId], references: [id])
   status             VisitStatus        @default(REQUESTED)
   paymentStatus      VisitPaymentStatus @default(UNPAID)
+  priority           TriagePriority     @default(GREEN)
+  bookingFor         BookingRelation    @default(SELF)
+  patientName        String?
+  patientAge         Int?
+  patientSex         String?
+  caregiverName      String?
+  caregiverPhone     String?
   reasonForVisit     String
   notes              String?
   addressLine1       String
@@ -133,10 +154,28 @@ model Visit {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   statusEvents       VisitStatusEvent[]
+  triage             VisitTriage?
 
   @@index([status])
   @@index([patientId])
   @@index([doctorId])
+  @@index([priority])
+}
+
+// Permanent audit record of the safety-triage answers and classification
+// for one visit. Never edited after creation — a future rule-version bump
+// must never rewrite historical classifications, only affect new visits.
+// NOT a clinical diagnosis: `priority` is a service-dispatch signal only.
+model VisitTriage {
+  id                  String         @id @default(cuid())
+  visitId             String         @unique
+  visit               Visit          @relation(fields: [visitId], references: [id])
+  ruleVersion         Int
+  answers             Json
+  priority            TriagePriority
+  matchedRedFlags     Json?
+  redFlagAcknowledged Boolean        @default(false)
+  createdAt           DateTime       @default(now())
 }
 
 // Audit trail of every status change. Powers the admin activity view today

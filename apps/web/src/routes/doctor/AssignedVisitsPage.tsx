@@ -1,6 +1,7 @@
 import { Role, getLegalTransitions, type VisitStatus } from '@ghar-doc/shared';
 import { useAssignedVisits, useUpdateVisitStatus } from '../../hooks/useVisits';
 import { VisitStatusBadge } from '../../components/VisitStatusBadge';
+import { TriagePriorityBadge } from '../../components/TriagePriorityBadge';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 
@@ -26,6 +27,7 @@ export function AssignedVisitsPage() {
         return (
           <Card key={visit.id}>
             <div className="mb-2 flex items-center gap-2">
+              <TriagePriorityBadge priority={visit.priority} />
               <VisitStatusBadge status={visit.status} />
               <span className="text-xs text-slate-400">{new Date(visit.requestedAt).toLocaleString()}</span>
             </div>
@@ -37,6 +39,17 @@ export function AssignedVisitsPage() {
               Patient: {visit.patient.firstName} {visit.patient.lastName}
               {visit.patient.phone ? ` · ${visit.patient.phone}` : ''}
             </p>
+            {visit.bookingFor !== 'SELF' && (
+              <p className="text-sm text-slate-600">
+                Booked for: {visit.patientName}
+                {visit.patientAge ? `, age ${visit.patientAge}` : ''} by {visit.caregiverName} · {visit.caregiverPhone}
+              </p>
+            )}
+            {visit.triageSummary && visit.triageSummary.matchedRedFlags.length > 0 && (
+              <p className="mt-1 text-xs text-red-600">
+                Flagged: {visit.triageSummary.matchedRedFlags.map((f) => f.label).join('; ')}
+              </p>
+            )}
             {nextTransitions.length > 0 && (
               <div className="mt-3 flex gap-2">
                 {nextTransitions.map((t) => (

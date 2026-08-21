@@ -50,6 +50,7 @@ export type DoctorTabParamList = {
 
 export type AdminTabParamList = {
   AllVisits: undefined;
+  Safety: undefined;
   Profile: undefined;
 };
 

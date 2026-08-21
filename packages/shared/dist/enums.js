@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DoctorStatus = exports.VisitPaymentStatus = exports.VisitStatus = exports.Role = void 0;
+exports.BookingRelation = exports.TriagePriority = exports.PaymentStatus = exports.DoctorStatus = exports.VisitPaymentStatus = exports.VisitStatus = exports.Role = void 0;
 exports.Role = {
     PATIENT: 'PATIENT',
     DOCTOR: 'DOCTOR',
@@ -24,4 +24,22 @@ exports.DoctorStatus = {
     APPROVED: 'APPROVED',
     REJECTED: 'REJECTED',
     SUSPENDED: 'SUSPENDED',
+};
+exports.PaymentStatus = {
+    CREATED: 'CREATED',
+    PAID: 'PAID',
+    FAILED: 'FAILED',
+    REFUNDED: 'REFUNDED',
+};
+exports.TriagePriority = {
+    GREEN: 'GREEN',
+    ORANGE: 'ORANGE',
+    RED: 'RED',
+};
+exports.BookingRelation = {
+    SELF: 'SELF',
+    PARENT: 'PARENT',
+    SPOUSE: 'SPOUSE',
+    CHILD: 'CHILD',
+    OTHER_FAMILY: 'OTHER_FAMILY',
 };

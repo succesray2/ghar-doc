@@ -4,6 +4,7 @@ import { useAssignedVisits, useUpdateVisitStatus } from '../../hooks/useVisits';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { VisitStatusBadge } from '../../components/VisitStatusBadge';
+import { TriagePriorityBadge } from '../../components/TriagePriorityBadge';
 import { EmptyState } from '../../components/EmptyState';
 import { colors, fonts } from '../../theme/colors';
 
@@ -47,7 +48,10 @@ function VisitCard({ visit, onAdvance, advancing }: { visit: VisitDto; onAdvance
   return (
     <Card>
       <View style={styles.rowBetween}>
-        <VisitStatusBadge status={visit.status} />
+        <View style={styles.badgeRow}>
+          <TriagePriorityBadge priority={visit.priority} />
+          <VisitStatusBadge status={visit.status} />
+        </View>
         <Text style={styles.timestamp}>{new Date(visit.requestedAt).toLocaleString()}</Text>
       </View>
       <Text style={styles.reason}>{visit.reasonForVisit}</Text>
@@ -58,6 +62,15 @@ function VisitCard({ visit, onAdvance, advancing }: { visit: VisitDto; onAdvance
         Patient: {visit.patient.firstName} {visit.patient.lastName}
         {visit.patient.phone ? ` · ${visit.patient.phone}` : ''}
       </Text>
+      {visit.bookingFor !== 'SELF' ? (
+        <Text style={styles.patient}>
+          Booked for: {visit.patientName}
+          {visit.patientAge ? `, age ${visit.patientAge}` : ''} by {visit.caregiverName} · {visit.caregiverPhone}
+        </Text>
+      ) : null}
+      {visit.triageSummary && visit.triageSummary.matchedRedFlags.length > 0 ? (
+        <Text style={styles.flagged}>Flagged: {visit.triageSummary.matchedRedFlags.map((f) => f.label).join('; ')}</Text>
+      ) : null}
       {nextTransitions.length > 0 ? (
         <View style={styles.actions}>
           {nextTransitions.map((t) => (
@@ -76,10 +89,12 @@ const styles = StyleSheet.create({
   center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   list: { padding: 16, flexGrow: 1 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  badgeRow: { flexDirection: 'row', gap: 6 },
   timestamp: { fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted },
   reason: { fontFamily: fonts.semiBold, fontSize: 16, color: colors.text, marginBottom: 4 },
   address: { fontFamily: fonts.regular, fontSize: 13, color: colors.textMuted },
   patient: { fontFamily: fonts.regular, fontSize: 13, color: colors.text, marginTop: 4 },
+  flagged: { fontFamily: fonts.medium, fontSize: 12, color: colors.danger, marginTop: 4 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   actionButton: { minWidth: 140 },
 });

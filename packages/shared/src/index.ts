@@ -1,4 +1,4 @@
-export { Role, VisitStatus, VisitPaymentStatus, DoctorStatus } from './enums';
+export { Role, VisitStatus, VisitPaymentStatus, DoctorStatus, PaymentStatus, TriagePriority, BookingRelation } from './enums';
 
 export {
   LoginSchema,
@@ -25,10 +25,15 @@ export {
   AssignDoctorSchema,
   UpdateVisitStatusSchema,
   CancelVisitSchema,
+  SymptomAnswerSchema,
+  TriageAnswersSchema,
+  TriagePreviewSchema,
   type CreateVisitInput,
   type AssignDoctorInput,
   type UpdateVisitStatusInput,
   type CancelVisitInput,
+  type TriageAnswersInput,
+  type TriagePreviewInput,
 } from './visit.schemas';
 
 export type {
@@ -36,9 +41,35 @@ export type {
   VisitDto,
   DoctorListItemDto,
   DoctorStatusEventDto,
+  PaymentDto,
+  CreatePaymentOrderDto,
+  TriageSummaryDto,
+  SafetyStatsDto,
   AuthResponseDto,
   AuthResponseMobileDto,
 } from './visit.types';
+
+export { VerifyPaymentSchema, type VerifyPaymentInput } from './payment.schemas';
+
+export {
+  TRIAGE_RULE_VERSION,
+  TRIAGE_TAXONOMY_NOTICE,
+  SYMPTOM_CATEGORIES,
+  DurationOption,
+  DURATION_LABELS,
+  SeverityOption,
+  SEVERITY_LABELS,
+  ASSOCIATED_SIGN_QUESTIONS,
+  TRIAGE_MESSAGES,
+  classifyTriage,
+  type SymptomDef,
+  type SymptomCategory,
+  type AssociatedSignQuestion,
+  type SymptomAnswer,
+  type TriageAnswers,
+  type TriageResult,
+  type MatchedRedFlag,
+} from './triage-rules';
 
 export {
   VISIT_TRANSITIONS,

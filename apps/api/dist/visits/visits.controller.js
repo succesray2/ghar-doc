@@ -29,6 +29,9 @@ let VisitsController = class VisitsController {
     create(user, body) {
         return this.visitsService.create(user.id, body);
     }
+    previewTriage(body) {
+        return this.visitsService.previewTriage(body.triageAnswers);
+    }
     findAll(status) {
         return this.visitsService.findAll(status);
     }
@@ -37,6 +40,9 @@ let VisitsController = class VisitsController {
     }
     findAssigned(user) {
         return this.visitsService.findAssigned(user.id);
+    }
+    safetyStats() {
+        return this.visitsService.safetyStats();
     }
     findOne(id, user) {
         return this.visitsService.findOneForUser(id, user);
@@ -62,6 +68,14 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VisitsController.prototype, "create", null);
 __decorate([
+    (0, roles_decorator_1.Roles)(shared_1.Role.PATIENT),
+    (0, common_1.Post)('triage-preview'),
+    __param(0, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(shared_1.TriagePreviewSchema))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], VisitsController.prototype, "previewTriage", null);
+__decorate([
     (0, roles_decorator_1.Roles)(shared_1.Role.ADMIN),
     (0, common_1.Get)(),
     __param(0, (0, common_1.Query)('status')),
@@ -85,6 +99,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], VisitsController.prototype, "findAssigned", null);
+__decorate([
+    (0, roles_decorator_1.Roles)(shared_1.Role.ADMIN),
+    (0, common_1.Get)('safety-stats'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], VisitsController.prototype, "safetyStats", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

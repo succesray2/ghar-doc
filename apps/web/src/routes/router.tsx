@@ -12,6 +12,7 @@ import { AssignedVisitsPage } from './doctor/AssignedVisitsPage';
 import { AdminLayout } from './admin/AdminLayout';
 import { AllVisitsPage } from './admin/AllVisitsPage';
 import { DoctorApplicationsPage } from './admin/DoctorApplicationsPage';
+import { SafetyDashboardPage } from './admin/SafetyDashboardPage';
 import { TermsPage } from './legal/TermsPage';
 import { PrivacyPolicyPage } from './legal/PrivacyPolicyPage';
 
@@ -60,6 +61,7 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to="visits" replace /> },
               { path: 'visits', element: <AllVisitsPage /> },
               { path: 'doctors', element: <DoctorApplicationsPage /> },
+              { path: 'safety', element: <SafetyDashboardPage /> },
             ],
           },
         ],

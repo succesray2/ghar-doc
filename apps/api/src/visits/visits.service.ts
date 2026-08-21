@@ -1,5 +1,17 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { DoctorStatus, Role, VisitStatus, type CreateVisitInput } from '@ghar-doc/shared';
+import type { Prisma } from '@prisma/client';
+import {
+  DoctorStatus,
+  Role,
+  VisitStatus,
+  TriagePriority,
+  TRIAGE_RULE_VERSION,
+  TRIAGE_MESSAGES,
+  classifyTriage,
+  type CreateVisitInput,
+  type TriageAnswersInput,
+  type SafetyStatsDto,
+} from '@ghar-doc/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthenticatedUser } from '../auth/types';
 import { isTransitionAllowed, timestampFieldFor } from './visit-status.util';
@@ -7,6 +19,7 @@ import { isTransitionAllowed, timestampFieldFor } from './visit-status.util';
 const VISIT_INCLUDE = {
   patient: { select: { id: true, firstName: true, lastName: true, phone: true } },
   doctor: { select: { id: true, firstName: true, lastName: true, phone: true } },
+  triage: true,
 } as const;
 
 type VisitRow = { id: string; status: string; patientId: string; doctorId: string | null };
@@ -15,42 +28,81 @@ type VisitRow = { id: string; status: string; patientId: string; doctorId: strin
 export class VisitsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Stateless — no DB write. Used by the booking wizard's Review step for
+   *  instant feedback; the server independently recomputes this again on
+   *  create() rather than trusting whatever the client saw here. */
+  previewTriage(answers: TriageAnswersInput) {
+    return classifyTriage(answers);
+  }
+
   async create(patientId: string, input: CreateVisitInput) {
-    return this.prisma.visit.create({
-      data: { patientId, ...input },
-      include: VISIT_INCLUDE,
+    const { triageAnswers, redFlagAcknowledged, ...visitFields } = input;
+    const classification = classifyTriage(triageAnswers);
+
+    if (classification.priority === TriagePriority.RED && !redFlagAcknowledged) {
+      throw new BadRequestException({
+        message: TRIAGE_MESSAGES.RED,
+        priority: classification.priority,
+        matchedRedFlags: classification.matchedRedFlags,
+      });
+    }
+
+    const visit = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.visit.create({
+        data: { patientId, ...visitFields, priority: classification.priority },
+        include: VISIT_INCLUDE,
+      });
+      await tx.visitTriage.create({
+        data: {
+          visitId: created.id,
+          ruleVersion: TRIAGE_RULE_VERSION,
+          answers: triageAnswers as unknown as Prisma.InputJsonValue,
+          priority: classification.priority,
+          matchedRedFlags: classification.matchedRedFlags as unknown as Prisma.InputJsonValue,
+          redFlagAcknowledged: classification.priority === TriagePriority.RED ? redFlagAcknowledged : false,
+        },
+      });
+      return created;
+    });
+
+    return this.mapVisit({
+      ...visit,
+      triage: { priority: classification.priority, matchedRedFlags: classification.matchedRedFlags, answers: triageAnswers },
     });
   }
 
   async findAll(status?: VisitStatus) {
-    return this.prisma.visit.findMany({
+    const visits = await this.prisma.visit.findMany({
       where: status ? { status } : undefined,
       include: VISIT_INCLUDE,
       orderBy: { requestedAt: 'desc' },
     });
+    return visits.map((v) => this.mapVisit(v));
   }
 
   async findMine(patientId: string) {
-    return this.prisma.visit.findMany({
+    const visits = await this.prisma.visit.findMany({
       where: { patientId },
       include: VISIT_INCLUDE,
       orderBy: { requestedAt: 'desc' },
     });
+    return visits.map((v) => this.mapVisit(v));
   }
 
   async findAssigned(doctorId: string) {
-    return this.prisma.visit.findMany({
+    const visits = await this.prisma.visit.findMany({
       where: { doctorId },
       include: VISIT_INCLUDE,
       orderBy: { requestedAt: 'desc' },
     });
+    return visits.map((v) => this.mapVisit(v));
   }
 
   async findOneForUser(id: string, user: AuthenticatedUser) {
     const visit = await this.prisma.visit.findUnique({ where: { id }, include: VISIT_INCLUDE });
     if (!visit) throw new NotFoundException('Visit not found');
     this.assertCanView(visit, user);
-    return visit;
+    return this.mapVisit(visit);
   }
 
   async assign(id: string, doctorId: string, actor: AuthenticatedUser) {
@@ -87,6 +139,26 @@ export class VisitsService {
     return this.transition(visit, VisitStatus.CANCELLED, actor, { cancellationReason: reason ?? null });
   }
 
+  async safetyStats(): Promise<SafetyStatsDto> {
+    const [byPriorityRaw, unassignedRaw, cancelled] = await Promise.all([
+      this.prisma.visit.groupBy({ by: ['priority'], _count: { _all: true } }),
+      this.prisma.visit.groupBy({ by: ['priority'], where: { status: VisitStatus.REQUESTED }, _count: { _all: true } }),
+      this.prisma.visit.count({ where: { status: VisitStatus.CANCELLED } }),
+    ]);
+
+    const byPriority: Record<TriagePriority, number> = { GREEN: 0, ORANGE: 0, RED: 0 };
+    byPriorityRaw.forEach((r) => {
+      byPriority[r.priority as TriagePriority] = r._count._all;
+    });
+
+    const unassignedByPriority: Record<TriagePriority, number> = { GREEN: 0, ORANGE: 0, RED: 0 };
+    unassignedRaw.forEach((r) => {
+      unassignedByPriority[r.priority as TriagePriority] = r._count._all;
+    });
+
+    return { byPriority, cancelled, unassignedByPriority };
+  }
+
   private async transition(
     visit: VisitRow,
     toStatus: VisitStatus,
@@ -95,8 +167,8 @@ export class VisitsService {
   ) {
     const timestampField = timestampFieldFor(toStatus);
 
-    return this.prisma.$transaction(async (tx) => {
-      const result = await tx.visit.update({
+    const result = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.visit.update({
         where: { id: visit.id },
         data: {
           status: toStatus,
@@ -115,8 +187,10 @@ export class VisitsService {
         },
       });
 
-      return result;
+      return updated;
     });
+
+    return this.mapVisit(result);
   }
 
   private async getOrThrow(id: string): Promise<VisitRow> {
@@ -130,5 +204,25 @@ export class VisitsService {
     if (user.role === Role.PATIENT && visit.patientId === user.id) return;
     if (user.role === Role.DOCTOR && visit.doctorId === user.id) return;
     throw new ForbiddenException('You do not have access to this visit');
+  }
+
+  /** Shapes the doctor/admin/patient-facing triage view — the derived
+   *  summary (priority, matched red flags, which symptoms were selected),
+   *  never the full raw associated-sign answer blob. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private mapVisit(visit: any) {
+    const { triage, ...rest } = visit;
+    if (!triage) {
+      return { ...rest, triageSummary: null };
+    }
+    const answers = triage.answers as { symptoms?: { symptomId: string }[] } | null | undefined;
+    return {
+      ...rest,
+      triageSummary: {
+        priority: triage.priority,
+        matchedRedFlags: triage.matchedRedFlags ?? [],
+        symptomIds: answers?.symptoms?.map((s) => s.symptomId) ?? [],
+      },
+    };
   }
 }

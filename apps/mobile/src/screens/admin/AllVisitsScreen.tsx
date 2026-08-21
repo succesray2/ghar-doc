@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -8,9 +8,12 @@ import { useAllVisits } from '../../hooks/useVisits';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { VisitStatusBadge } from '../../components/VisitStatusBadge';
+import { TriagePriorityBadge } from '../../components/TriagePriorityBadge';
 import { EmptyState } from '../../components/EmptyState';
 import { colors, fonts } from '../../theme/colors';
 import type { AdminStackParamList, AdminTabParamList } from '../../navigation/types';
+
+const PRIORITY_ORDER = { RED: 0, ORANGE: 1, GREEN: 2 };
 
 const STATUS_FILTERS: { label: string; value: VisitStatus | undefined }[] = [
   { label: 'All', value: undefined },
@@ -30,6 +33,11 @@ type Props = CompositeScreenProps<
 export function AllVisitsScreen({ navigation }: Props) {
   const [status, setStatus] = useState<VisitStatus | undefined>(undefined);
   const { data: visits, isLoading, isRefetching, refetch } = useAllVisits(status);
+
+  const sortedVisits = useMemo(
+    () => (visits ? [...visits].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]) : []),
+    [visits],
+  );
 
   return (
     <View style={styles.flex}>
@@ -57,7 +65,7 @@ export function AllVisitsScreen({ navigation }: Props) {
       ) : (
         <FlatList
           contentContainerStyle={styles.list}
-          data={visits ?? []}
+          data={sortedVisits}
           keyExtractor={(v) => v.id}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.brand600} />}
           ListEmptyComponent={<EmptyState icon="list" title="No visits found" message="Nothing matches this filter yet." />}
@@ -77,15 +85,24 @@ function VisitCard({ visit, onAssign }: { visit: VisitDto; onAssign: () => void 
   return (
     <Card>
       <View style={styles.rowBetween}>
-        <VisitStatusBadge status={visit.status} />
+        <View style={styles.badgeRow}>
+          <TriagePriorityBadge priority={visit.priority} />
+          <VisitStatusBadge status={visit.status} />
+        </View>
         <Text style={styles.timestamp}>{new Date(visit.requestedAt).toLocaleString()}</Text>
       </View>
       <Text style={styles.reason}>{visit.reasonForVisit}</Text>
       <Text style={styles.address}>
         {visit.addressLine1}, {visit.city}, {visit.state} {visit.postalCode}
       </Text>
-      <Text style={styles.person}>Patient: {visit.patient.firstName} {visit.patient.lastName}</Text>
+      <Text style={styles.person}>
+        Patient: {visit.patient.firstName} {visit.patient.lastName}
+        {visit.bookingFor !== 'SELF' && visit.patientName ? ` (booking for ${visit.patientName})` : ''}
+      </Text>
       {visit.doctor ? <Text style={styles.person}>Doctor: {visit.doctor.firstName} {visit.doctor.lastName}</Text> : null}
+      {visit.triageSummary && visit.triageSummary.matchedRedFlags.length > 0 ? (
+        <Text style={styles.flagged}>Flagged: {visit.triageSummary.matchedRedFlags.map((f) => f.label).join('; ')}</Text>
+      ) : null}
       {visit.status === 'REQUESTED' ? (
         <View style={styles.assignButton}>
           <Button title="Assign doctor" onPress={onAssign} />
@@ -106,9 +123,11 @@ const styles = StyleSheet.create({
   pillTextActive: { color: '#fff' },
   list: { padding: 16, flexGrow: 1 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  badgeRow: { flexDirection: 'row', gap: 6 },
   timestamp: { fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted },
   reason: { fontFamily: fonts.semiBold, fontSize: 16, color: colors.text, marginBottom: 4 },
   address: { fontFamily: fonts.regular, fontSize: 13, color: colors.textMuted },
   person: { fontFamily: fonts.regular, fontSize: 13, color: colors.text, marginTop: 2 },
+  flagged: { fontFamily: fonts.medium, fontSize: 12, color: colors.danger, marginTop: 4 },
   assignButton: { marginTop: 12, alignSelf: 'flex-start', minWidth: 140 },
 });

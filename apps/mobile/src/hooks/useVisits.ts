@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CreateVisitInput, VisitDto, VisitStatus } from '@ghar-doc/shared';
+import type { CreateVisitInput, SafetyStatsDto, TriageAnswersInput, TriageResult, VisitDto, VisitStatus } from '@ghar-doc/shared';
 import { apiClient } from '../lib/api-client';
 
 export function useMyVisits() {
@@ -32,6 +32,25 @@ export function useAllVisits(status?: VisitStatus) {
       return data;
     },
     refetchInterval: 8000,
+  });
+}
+
+export function useTriagePreview() {
+  return useMutation({
+    mutationFn: async (triageAnswers: TriageAnswersInput) => {
+      const { data } = await apiClient.post<TriageResult>('/visits/triage-preview', { triageAnswers });
+      return data;
+    },
+  });
+}
+
+export function useSafetyStats() {
+  return useQuery({
+    queryKey: ['visits', 'safety-stats'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<SafetyStatsDto>('/visits/safety-stats');
+      return data;
+    },
   });
 }
 

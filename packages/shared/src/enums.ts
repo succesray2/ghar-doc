@@ -29,3 +29,27 @@ export const DoctorStatus = {
   SUSPENDED: 'SUSPENDED',
 } as const;
 export type DoctorStatus = (typeof DoctorStatus)[keyof typeof DoctorStatus];
+
+export const PaymentStatus = {
+  CREATED: 'CREATED',
+  PAID: 'PAID',
+  FAILED: 'FAILED',
+  REFUNDED: 'REFUNDED',
+} as const;
+export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
+
+export const TriagePriority = {
+  GREEN: 'GREEN',
+  ORANGE: 'ORANGE',
+  RED: 'RED',
+} as const;
+export type TriagePriority = (typeof TriagePriority)[keyof typeof TriagePriority];
+
+export const BookingRelation = {
+  SELF: 'SELF',
+  PARENT: 'PARENT',
+  SPOUSE: 'SPOUSE',
+  CHILD: 'CHILD',
+  OTHER_FAMILY: 'OTHER_FAMILY',
+} as const;
+export type BookingRelation = (typeof BookingRelation)[keyof typeof BookingRelation];

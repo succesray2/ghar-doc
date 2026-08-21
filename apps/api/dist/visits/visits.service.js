@@ -17,45 +17,78 @@ const visit_status_util_1 = require("./visit-status.util");
 const VISIT_INCLUDE = {
     patient: { select: { id: true, firstName: true, lastName: true, phone: true } },
     doctor: { select: { id: true, firstName: true, lastName: true, phone: true } },
+    triage: true,
 };
 let VisitsService = class VisitsService {
     prisma;
     constructor(prisma) {
         this.prisma = prisma;
     }
+    previewTriage(answers) {
+        return (0, shared_1.classifyTriage)(answers);
+    }
     async create(patientId, input) {
-        return this.prisma.visit.create({
-            data: { patientId, ...input },
-            include: VISIT_INCLUDE,
+        const { triageAnswers, redFlagAcknowledged, ...visitFields } = input;
+        const classification = (0, shared_1.classifyTriage)(triageAnswers);
+        if (classification.priority === shared_1.TriagePriority.RED && !redFlagAcknowledged) {
+            throw new common_1.BadRequestException({
+                message: shared_1.TRIAGE_MESSAGES.RED,
+                priority: classification.priority,
+                matchedRedFlags: classification.matchedRedFlags,
+            });
+        }
+        const visit = await this.prisma.$transaction(async (tx) => {
+            const created = await tx.visit.create({
+                data: { patientId, ...visitFields, priority: classification.priority },
+                include: VISIT_INCLUDE,
+            });
+            await tx.visitTriage.create({
+                data: {
+                    visitId: created.id,
+                    ruleVersion: shared_1.TRIAGE_RULE_VERSION,
+                    answers: triageAnswers,
+                    priority: classification.priority,
+                    matchedRedFlags: classification.matchedRedFlags,
+                    redFlagAcknowledged: classification.priority === shared_1.TriagePriority.RED ? redFlagAcknowledged : false,
+                },
+            });
+            return created;
+        });
+        return this.mapVisit({
+            ...visit,
+            triage: { priority: classification.priority, matchedRedFlags: classification.matchedRedFlags, answers: triageAnswers },
         });
     }
     async findAll(status) {
-        return this.prisma.visit.findMany({
+        const visits = await this.prisma.visit.findMany({
             where: status ? { status } : undefined,
             include: VISIT_INCLUDE,
             orderBy: { requestedAt: 'desc' },
         });
+        return visits.map((v) => this.mapVisit(v));
     }
     async findMine(patientId) {
-        return this.prisma.visit.findMany({
+        const visits = await this.prisma.visit.findMany({
             where: { patientId },
             include: VISIT_INCLUDE,
             orderBy: { requestedAt: 'desc' },
         });
+        return visits.map((v) => this.mapVisit(v));
     }
     async findAssigned(doctorId) {
-        return this.prisma.visit.findMany({
+        const visits = await this.prisma.visit.findMany({
             where: { doctorId },
             include: VISIT_INCLUDE,
             orderBy: { requestedAt: 'desc' },
         });
+        return visits.map((v) => this.mapVisit(v));
     }
     async findOneForUser(id, user) {
         const visit = await this.prisma.visit.findUnique({ where: { id }, include: VISIT_INCLUDE });
         if (!visit)
             throw new common_1.NotFoundException('Visit not found');
         this.assertCanView(visit, user);
-        return visit;
+        return this.mapVisit(visit);
     }
     async assign(id, doctorId, actor) {
         const visit = await this.getOrThrow(id);
@@ -88,10 +121,26 @@ let VisitsService = class VisitsService {
         }
         return this.transition(visit, shared_1.VisitStatus.CANCELLED, actor, { cancellationReason: reason ?? null });
     }
+    async safetyStats() {
+        const [byPriorityRaw, unassignedRaw, cancelled] = await Promise.all([
+            this.prisma.visit.groupBy({ by: ['priority'], _count: { _all: true } }),
+            this.prisma.visit.groupBy({ by: ['priority'], where: { status: shared_1.VisitStatus.REQUESTED }, _count: { _all: true } }),
+            this.prisma.visit.count({ where: { status: shared_1.VisitStatus.CANCELLED } }),
+        ]);
+        const byPriority = { GREEN: 0, ORANGE: 0, RED: 0 };
+        byPriorityRaw.forEach((r) => {
+            byPriority[r.priority] = r._count._all;
+        });
+        const unassignedByPriority = { GREEN: 0, ORANGE: 0, RED: 0 };
+        unassignedRaw.forEach((r) => {
+            unassignedByPriority[r.priority] = r._count._all;
+        });
+        return { byPriority, cancelled, unassignedByPriority };
+    }
     async transition(visit, toStatus, actor, extraData = {}) {
         const timestampField = (0, visit_status_util_1.timestampFieldFor)(toStatus);
-        return this.prisma.$transaction(async (tx) => {
-            const result = await tx.visit.update({
+        const result = await this.prisma.$transaction(async (tx) => {
+            const updated = await tx.visit.update({
                 where: { id: visit.id },
                 data: {
                     status: toStatus,
@@ -108,8 +157,9 @@ let VisitsService = class VisitsService {
                     changedById: actor.id,
                 },
             });
-            return result;
+            return updated;
         });
+        return this.mapVisit(result);
     }
     async getOrThrow(id) {
         const visit = await this.prisma.visit.findUnique({ where: { id } });
@@ -125,6 +175,21 @@ let VisitsService = class VisitsService {
         if (user.role === shared_1.Role.DOCTOR && visit.doctorId === user.id)
             return;
         throw new common_1.ForbiddenException('You do not have access to this visit');
+    }
+    mapVisit(visit) {
+        const { triage, ...rest } = visit;
+        if (!triage) {
+            return { ...rest, triageSummary: null };
+        }
+        const answers = triage.answers;
+        return {
+            ...rest,
+            triageSummary: {
+                priority: triage.priority,
+                matchedRedFlags: triage.matchedRedFlags ?? [],
+                symptomIds: answers?.symptoms?.map((s) => s.symptomId) ?? [],
+            },
+        };
     }
 };
 exports.VisitsService = VisitsService;

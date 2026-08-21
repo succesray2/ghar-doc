@@ -2,6 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
 import { AllVisitsScreen } from '../screens/admin/AllVisitsScreen';
+import { SafetyDashboardScreen } from '../screens/admin/SafetyDashboardScreen';
 import { AssignDoctorModal } from '../screens/admin/AssignDoctorModal';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { colors } from '../theme/colors';
@@ -17,6 +18,11 @@ function AdminTabs() {
         name="AllVisits"
         component={AllVisitsScreen}
         options={{ title: 'All Visits', tabBarIcon: ({ color, size }) => <Feather name="list" size={size} color={color} /> }}
+      />
+      <Tab.Screen
+        name="Safety"
+        component={SafetyDashboardScreen}
+        options={{ title: 'Safety', tabBarIcon: ({ color, size }) => <Feather name="shield" size={size} color={color} /> }}
       />
       <Tab.Screen
         name="Profile"
