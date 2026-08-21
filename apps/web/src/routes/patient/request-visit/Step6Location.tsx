@@ -2,7 +2,7 @@ import { Field } from '../../../components/ui/Field';
 import { Input } from '../../../components/ui/Input';
 import type { WizardState } from './types';
 
-export function Step6AddressSubmit({
+export function Step6Location({
   state,
   onChange,
   errors,
@@ -13,7 +13,8 @@ export function Step6AddressSubmit({
 }) {
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-slate-800">Where should the doctor come?</h2>
+      <h2 className="text-lg font-semibold text-slate-800">Location</h2>
+      <p className="text-sm text-slate-600">Where should the doctor come?</p>
       <Field label="Additional notes (optional)">
         <Input value={state.notes} onChange={(e) => onChange({ notes: e.target.value })} />
       </Field>

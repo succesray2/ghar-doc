@@ -12,6 +12,16 @@ export const SymptomAnswerSchema = z.object({
   startedAt: z.string().optional(),
   severity: z.enum(SEVERITY_VALUES as [SeverityOption, ...SeverityOption[]]).optional(),
   associatedSigns: z.record(z.boolean()).optional(),
+  bodyRegion: z.string().optional(),
+  numericReadings: z
+    .object({
+      systolic: z.coerce.number().optional(),
+      diastolic: z.coerce.number().optional(),
+      temperature: z.coerce.number().optional(),
+      temperatureUnit: z.enum(['C', 'F']).optional(),
+    })
+    .optional(),
+  knownCondition: z.boolean().optional(),
 });
 
 export const TriageAnswersSchema = z.object({

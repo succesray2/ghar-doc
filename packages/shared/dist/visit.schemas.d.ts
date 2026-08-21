@@ -7,18 +7,52 @@ export declare const SymptomAnswerSchema: z.ZodObject<{
     startedAt: z.ZodOptional<z.ZodString>;
     severity: z.ZodOptional<z.ZodEnum<[SeverityOption, ...SeverityOption[]]>>;
     associatedSigns: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodBoolean>>;
+    bodyRegion: z.ZodOptional<z.ZodString>;
+    numericReadings: z.ZodOptional<z.ZodObject<{
+        systolic: z.ZodOptional<z.ZodNumber>;
+        diastolic: z.ZodOptional<z.ZodNumber>;
+        temperature: z.ZodOptional<z.ZodNumber>;
+        temperatureUnit: z.ZodOptional<z.ZodEnum<["C", "F"]>>;
+    }, "strip", z.ZodTypeAny, {
+        systolic?: number | undefined;
+        diastolic?: number | undefined;
+        temperature?: number | undefined;
+        temperatureUnit?: "C" | "F" | undefined;
+    }, {
+        systolic?: number | undefined;
+        diastolic?: number | undefined;
+        temperature?: number | undefined;
+        temperatureUnit?: "C" | "F" | undefined;
+    }>>;
+    knownCondition: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
     symptomId: string;
+    severity?: SeverityOption | undefined;
     duration?: DurationOption | undefined;
     startedAt?: string | undefined;
-    severity?: SeverityOption | undefined;
     associatedSigns?: Record<string, boolean> | undefined;
+    bodyRegion?: string | undefined;
+    numericReadings?: {
+        systolic?: number | undefined;
+        diastolic?: number | undefined;
+        temperature?: number | undefined;
+        temperatureUnit?: "C" | "F" | undefined;
+    } | undefined;
+    knownCondition?: boolean | undefined;
 }, {
     symptomId: string;
+    severity?: SeverityOption | undefined;
     duration?: DurationOption | undefined;
     startedAt?: string | undefined;
-    severity?: SeverityOption | undefined;
     associatedSigns?: Record<string, boolean> | undefined;
+    bodyRegion?: string | undefined;
+    numericReadings?: {
+        systolic?: number | undefined;
+        diastolic?: number | undefined;
+        temperature?: number | undefined;
+        temperatureUnit?: "C" | "F" | undefined;
+    } | undefined;
+    knownCondition?: boolean | undefined;
 }>;
 export declare const TriageAnswersSchema: z.ZodObject<{
     symptoms: z.ZodArray<z.ZodObject<{
@@ -27,36 +61,86 @@ export declare const TriageAnswersSchema: z.ZodObject<{
         startedAt: z.ZodOptional<z.ZodString>;
         severity: z.ZodOptional<z.ZodEnum<[SeverityOption, ...SeverityOption[]]>>;
         associatedSigns: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodBoolean>>;
+        bodyRegion: z.ZodOptional<z.ZodString>;
+        numericReadings: z.ZodOptional<z.ZodObject<{
+            systolic: z.ZodOptional<z.ZodNumber>;
+            diastolic: z.ZodOptional<z.ZodNumber>;
+            temperature: z.ZodOptional<z.ZodNumber>;
+            temperatureUnit: z.ZodOptional<z.ZodEnum<["C", "F"]>>;
+        }, "strip", z.ZodTypeAny, {
+            systolic?: number | undefined;
+            diastolic?: number | undefined;
+            temperature?: number | undefined;
+            temperatureUnit?: "C" | "F" | undefined;
+        }, {
+            systolic?: number | undefined;
+            diastolic?: number | undefined;
+            temperature?: number | undefined;
+            temperatureUnit?: "C" | "F" | undefined;
+        }>>;
+        knownCondition: z.ZodOptional<z.ZodBoolean>;
     }, "strip", z.ZodTypeAny, {
         symptomId: string;
+        severity?: SeverityOption | undefined;
         duration?: DurationOption | undefined;
         startedAt?: string | undefined;
-        severity?: SeverityOption | undefined;
         associatedSigns?: Record<string, boolean> | undefined;
+        bodyRegion?: string | undefined;
+        numericReadings?: {
+            systolic?: number | undefined;
+            diastolic?: number | undefined;
+            temperature?: number | undefined;
+            temperatureUnit?: "C" | "F" | undefined;
+        } | undefined;
+        knownCondition?: boolean | undefined;
     }, {
         symptomId: string;
+        severity?: SeverityOption | undefined;
         duration?: DurationOption | undefined;
         startedAt?: string | undefined;
-        severity?: SeverityOption | undefined;
         associatedSigns?: Record<string, boolean> | undefined;
+        bodyRegion?: string | undefined;
+        numericReadings?: {
+            systolic?: number | undefined;
+            diastolic?: number | undefined;
+            temperature?: number | undefined;
+            temperatureUnit?: "C" | "F" | undefined;
+        } | undefined;
+        knownCondition?: boolean | undefined;
     }>, "many">;
     otherSymptomText: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     symptoms: {
         symptomId: string;
+        severity?: SeverityOption | undefined;
         duration?: DurationOption | undefined;
         startedAt?: string | undefined;
-        severity?: SeverityOption | undefined;
         associatedSigns?: Record<string, boolean> | undefined;
+        bodyRegion?: string | undefined;
+        numericReadings?: {
+            systolic?: number | undefined;
+            diastolic?: number | undefined;
+            temperature?: number | undefined;
+            temperatureUnit?: "C" | "F" | undefined;
+        } | undefined;
+        knownCondition?: boolean | undefined;
     }[];
     otherSymptomText?: string | undefined;
 }, {
     symptoms: {
         symptomId: string;
+        severity?: SeverityOption | undefined;
         duration?: DurationOption | undefined;
         startedAt?: string | undefined;
-        severity?: SeverityOption | undefined;
         associatedSigns?: Record<string, boolean> | undefined;
+        bodyRegion?: string | undefined;
+        numericReadings?: {
+            systolic?: number | undefined;
+            diastolic?: number | undefined;
+            temperature?: number | undefined;
+            temperatureUnit?: "C" | "F" | undefined;
+        } | undefined;
+        knownCondition?: boolean | undefined;
     }[];
     otherSymptomText?: string | undefined;
 }>;
@@ -69,36 +153,86 @@ export declare const TriagePreviewSchema: z.ZodObject<{
             startedAt: z.ZodOptional<z.ZodString>;
             severity: z.ZodOptional<z.ZodEnum<[SeverityOption, ...SeverityOption[]]>>;
             associatedSigns: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodBoolean>>;
+            bodyRegion: z.ZodOptional<z.ZodString>;
+            numericReadings: z.ZodOptional<z.ZodObject<{
+                systolic: z.ZodOptional<z.ZodNumber>;
+                diastolic: z.ZodOptional<z.ZodNumber>;
+                temperature: z.ZodOptional<z.ZodNumber>;
+                temperatureUnit: z.ZodOptional<z.ZodEnum<["C", "F"]>>;
+            }, "strip", z.ZodTypeAny, {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            }, {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            }>>;
+            knownCondition: z.ZodOptional<z.ZodBoolean>;
         }, "strip", z.ZodTypeAny, {
             symptomId: string;
+            severity?: SeverityOption | undefined;
             duration?: DurationOption | undefined;
             startedAt?: string | undefined;
-            severity?: SeverityOption | undefined;
             associatedSigns?: Record<string, boolean> | undefined;
+            bodyRegion?: string | undefined;
+            numericReadings?: {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            } | undefined;
+            knownCondition?: boolean | undefined;
         }, {
             symptomId: string;
+            severity?: SeverityOption | undefined;
             duration?: DurationOption | undefined;
             startedAt?: string | undefined;
-            severity?: SeverityOption | undefined;
             associatedSigns?: Record<string, boolean> | undefined;
+            bodyRegion?: string | undefined;
+            numericReadings?: {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            } | undefined;
+            knownCondition?: boolean | undefined;
         }>, "many">;
         otherSymptomText: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         symptoms: {
             symptomId: string;
+            severity?: SeverityOption | undefined;
             duration?: DurationOption | undefined;
             startedAt?: string | undefined;
-            severity?: SeverityOption | undefined;
             associatedSigns?: Record<string, boolean> | undefined;
+            bodyRegion?: string | undefined;
+            numericReadings?: {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            } | undefined;
+            knownCondition?: boolean | undefined;
         }[];
         otherSymptomText?: string | undefined;
     }, {
         symptoms: {
             symptomId: string;
+            severity?: SeverityOption | undefined;
             duration?: DurationOption | undefined;
             startedAt?: string | undefined;
-            severity?: SeverityOption | undefined;
             associatedSigns?: Record<string, boolean> | undefined;
+            bodyRegion?: string | undefined;
+            numericReadings?: {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            } | undefined;
+            knownCondition?: boolean | undefined;
         }[];
         otherSymptomText?: string | undefined;
     }>;
@@ -106,10 +240,18 @@ export declare const TriagePreviewSchema: z.ZodObject<{
     triageAnswers: {
         symptoms: {
             symptomId: string;
+            severity?: SeverityOption | undefined;
             duration?: DurationOption | undefined;
             startedAt?: string | undefined;
-            severity?: SeverityOption | undefined;
             associatedSigns?: Record<string, boolean> | undefined;
+            bodyRegion?: string | undefined;
+            numericReadings?: {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            } | undefined;
+            knownCondition?: boolean | undefined;
         }[];
         otherSymptomText?: string | undefined;
     };
@@ -117,10 +259,18 @@ export declare const TriagePreviewSchema: z.ZodObject<{
     triageAnswers: {
         symptoms: {
             symptomId: string;
+            severity?: SeverityOption | undefined;
             duration?: DurationOption | undefined;
             startedAt?: string | undefined;
-            severity?: SeverityOption | undefined;
             associatedSigns?: Record<string, boolean> | undefined;
+            bodyRegion?: string | undefined;
+            numericReadings?: {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            } | undefined;
+            knownCondition?: boolean | undefined;
         }[];
         otherSymptomText?: string | undefined;
     };
@@ -147,36 +297,86 @@ export declare const CreateVisitSchema: z.ZodEffects<z.ZodObject<{
             startedAt: z.ZodOptional<z.ZodString>;
             severity: z.ZodOptional<z.ZodEnum<[SeverityOption, ...SeverityOption[]]>>;
             associatedSigns: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodBoolean>>;
+            bodyRegion: z.ZodOptional<z.ZodString>;
+            numericReadings: z.ZodOptional<z.ZodObject<{
+                systolic: z.ZodOptional<z.ZodNumber>;
+                diastolic: z.ZodOptional<z.ZodNumber>;
+                temperature: z.ZodOptional<z.ZodNumber>;
+                temperatureUnit: z.ZodOptional<z.ZodEnum<["C", "F"]>>;
+            }, "strip", z.ZodTypeAny, {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            }, {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            }>>;
+            knownCondition: z.ZodOptional<z.ZodBoolean>;
         }, "strip", z.ZodTypeAny, {
             symptomId: string;
+            severity?: SeverityOption | undefined;
             duration?: DurationOption | undefined;
             startedAt?: string | undefined;
-            severity?: SeverityOption | undefined;
             associatedSigns?: Record<string, boolean> | undefined;
+            bodyRegion?: string | undefined;
+            numericReadings?: {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            } | undefined;
+            knownCondition?: boolean | undefined;
         }, {
             symptomId: string;
+            severity?: SeverityOption | undefined;
             duration?: DurationOption | undefined;
             startedAt?: string | undefined;
-            severity?: SeverityOption | undefined;
             associatedSigns?: Record<string, boolean> | undefined;
+            bodyRegion?: string | undefined;
+            numericReadings?: {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            } | undefined;
+            knownCondition?: boolean | undefined;
         }>, "many">;
         otherSymptomText: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         symptoms: {
             symptomId: string;
+            severity?: SeverityOption | undefined;
             duration?: DurationOption | undefined;
             startedAt?: string | undefined;
-            severity?: SeverityOption | undefined;
             associatedSigns?: Record<string, boolean> | undefined;
+            bodyRegion?: string | undefined;
+            numericReadings?: {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            } | undefined;
+            knownCondition?: boolean | undefined;
         }[];
         otherSymptomText?: string | undefined;
     }, {
         symptoms: {
             symptomId: string;
+            severity?: SeverityOption | undefined;
             duration?: DurationOption | undefined;
             startedAt?: string | undefined;
-            severity?: SeverityOption | undefined;
             associatedSigns?: Record<string, boolean> | undefined;
+            bodyRegion?: string | undefined;
+            numericReadings?: {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            } | undefined;
+            knownCondition?: boolean | undefined;
         }[];
         otherSymptomText?: string | undefined;
     }>;
@@ -189,10 +389,18 @@ export declare const CreateVisitSchema: z.ZodEffects<z.ZodObject<{
     triageAnswers: {
         symptoms: {
             symptomId: string;
+            severity?: SeverityOption | undefined;
             duration?: DurationOption | undefined;
             startedAt?: string | undefined;
-            severity?: SeverityOption | undefined;
             associatedSigns?: Record<string, boolean> | undefined;
+            bodyRegion?: string | undefined;
+            numericReadings?: {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            } | undefined;
+            knownCondition?: boolean | undefined;
         }[];
         otherSymptomText?: string | undefined;
     };
@@ -214,10 +422,18 @@ export declare const CreateVisitSchema: z.ZodEffects<z.ZodObject<{
     triageAnswers: {
         symptoms: {
             symptomId: string;
+            severity?: SeverityOption | undefined;
             duration?: DurationOption | undefined;
             startedAt?: string | undefined;
-            severity?: SeverityOption | undefined;
             associatedSigns?: Record<string, boolean> | undefined;
+            bodyRegion?: string | undefined;
+            numericReadings?: {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            } | undefined;
+            knownCondition?: boolean | undefined;
         }[];
         otherSymptomText?: string | undefined;
     };
@@ -239,10 +455,18 @@ export declare const CreateVisitSchema: z.ZodEffects<z.ZodObject<{
     triageAnswers: {
         symptoms: {
             symptomId: string;
+            severity?: SeverityOption | undefined;
             duration?: DurationOption | undefined;
             startedAt?: string | undefined;
-            severity?: SeverityOption | undefined;
             associatedSigns?: Record<string, boolean> | undefined;
+            bodyRegion?: string | undefined;
+            numericReadings?: {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            } | undefined;
+            knownCondition?: boolean | undefined;
         }[];
         otherSymptomText?: string | undefined;
     };
@@ -264,10 +488,18 @@ export declare const CreateVisitSchema: z.ZodEffects<z.ZodObject<{
     triageAnswers: {
         symptoms: {
             symptomId: string;
+            severity?: SeverityOption | undefined;
             duration?: DurationOption | undefined;
             startedAt?: string | undefined;
-            severity?: SeverityOption | undefined;
             associatedSigns?: Record<string, boolean> | undefined;
+            bodyRegion?: string | undefined;
+            numericReadings?: {
+                systolic?: number | undefined;
+                diastolic?: number | undefined;
+                temperature?: number | undefined;
+                temperatureUnit?: "C" | "F" | undefined;
+            } | undefined;
+            knownCondition?: boolean | undefined;
         }[];
         otherSymptomText?: string | undefined;
     };

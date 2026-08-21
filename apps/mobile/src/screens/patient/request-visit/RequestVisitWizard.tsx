@@ -9,16 +9,19 @@ import { colors, fonts } from '../../../theme/colors';
 import type { PatientStackParamList } from '../../../navigation/types';
 import { Step1WhoNeedsCare } from './Step1WhoNeedsCare';
 import { Step2Symptoms } from './Step2Symptoms';
-import { Step3DurationSeverity } from './Step3DurationSeverity';
-import { Step4AssociatedSigns } from './Step4AssociatedSigns';
+import { Step3Duration } from './Step3Duration';
+import { Step4Severity } from './Step4Severity';
 import { Step5Review } from './Step5Review';
-import { Step6AddressSubmit } from './Step6AddressSubmit';
-import { INITIAL_WIZARD_STATE, type WizardState } from './types';
+import { Step6Location } from './Step6Location';
+import { Step7DoctorRequest } from './Step7DoctorRequest';
+import { INITIAL_WIZARD_STATE, type SymptomDetail, type WizardState } from './types';
 
 type Props = NativeStackScreenProps<PatientStackParamList, 'RequestVisit'>;
 
-const STEP_TITLES = ['Who needs care', 'Symptoms', 'Duration & severity', 'Warning signs', 'Review', 'Address'];
+const STEP_TITLES = ['Who needs care', 'Signs & Symptoms', 'Duration', 'Severity', 'Safety review', 'Location', 'Doctor request'];
 const TOTAL_STEPS = STEP_TITLES.length;
+const TRIAGE_REVIEW_STEP = 5;
+const LOCATION_STEP = 6;
 
 const symptomLabel = (id: string) => SYMPTOM_CATEGORIES.flatMap((c) => c.symptoms).find((s) => s.id === id)?.label ?? id;
 
@@ -53,7 +56,7 @@ export function RequestVisitScreen({ navigation, route }: Props) {
     });
   };
 
-  const updateDetail: React.ComponentProps<typeof Step3DurationSeverity>['onUpdateDetail'] = (symptomId, patch) => {
+  const updateDetail = (symptomId: string, patch: Partial<SymptomDetail>) => {
     setState((s) => ({
       ...s,
       symptomDetails: {
@@ -82,33 +85,48 @@ export function RequestVisitScreen({ navigation, route }: Props) {
       duration: state.symptomDetails[symptomId]?.duration,
       severity: state.symptomDetails[symptomId]?.severity,
       associatedSigns: state.symptomDetails[symptomId]?.associatedSigns,
+      bodyRegion: state.symptomDetails[symptomId]?.bodyRegion,
+      numericReadings: state.symptomDetails[symptomId]?.numericReadings,
+      knownCondition: state.symptomDetails[symptomId]?.knownCondition,
     })),
     otherSymptomText: state.otherSymptomText || undefined,
   };
 
   useEffect(() => {
-    if (step === 5) {
+    if (step === TRIAGE_REVIEW_STEP) {
       setAcknowledged(false);
       triagePreview.mutate(triageAnswers, { onSuccess: (data) => setTriageResult(data) });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  const canProceed = (): boolean => {
-    if (step === 2) return state.selectedSymptomIds.length > 0 || state.otherSymptomText.trim().length > 0;
-    if (step === 5) return triageResult !== null && (triageResult.priority !== 'RED' || acknowledged);
-    return true;
-  };
-
-  const handleSubmit = () => {
-    setSubmitError(null);
+  const validateAddress = () => {
     const errors: Record<string, string> = {};
     if (!state.addressLine1.trim()) errors.addressLine1 = 'Required';
     if (!state.city.trim()) errors.city = 'Required';
     if (!state.state.trim()) errors.state = 'Required';
     if (!state.postalCode.trim()) errors.postalCode = 'Required';
     setAddressErrors(errors);
-    if (Object.keys(errors).length > 0) return;
+    return Object.keys(errors).length === 0;
+  };
+
+  const canProceed = (): boolean => {
+    if (step === 2) return state.selectedSymptomIds.length > 0 || state.otherSymptomText.trim().length > 0;
+    if (step === TRIAGE_REVIEW_STEP) return triageResult !== null && (triageResult.priority !== 'RED' || acknowledged);
+    return true;
+  };
+
+  const handleNext = () => {
+    if (step === LOCATION_STEP && !validateAddress()) return;
+    setStep((s) => s + 1);
+  };
+
+  const handleSubmit = () => {
+    setSubmitError(null);
+    if (!validateAddress()) {
+      setStep(LOCATION_STEP);
+      return;
+    }
 
     const reasonForVisit =
       [...state.selectedSymptomIds.map(symptomLabel), state.otherSymptomText].filter(Boolean).join(', ') || 'Home visit request';
@@ -163,9 +181,9 @@ export function RequestVisitScreen({ navigation, route }: Props) {
 
           {step === 1 && <Step1WhoNeedsCare state={state} onChange={update} />}
           {step === 2 && <Step2Symptoms state={state} onToggleSymptom={toggleSymptom} onChange={update} />}
-          {step === 3 && <Step3DurationSeverity state={state} onUpdateDetail={updateDetail} />}
-          {step === 4 && <Step4AssociatedSigns state={state} onSetSign={setSign} />}
-          {step === 5 && (
+          {step === 3 && <Step3Duration state={state} onUpdateDetail={updateDetail} />}
+          {step === 4 && <Step4Severity state={state} onUpdateDetail={updateDetail} onSetSign={setSign} />}
+          {step === TRIAGE_REVIEW_STEP && (
             <Step5Review
               state={state}
               result={triageResult}
@@ -174,7 +192,8 @@ export function RequestVisitScreen({ navigation, route }: Props) {
               onAcknowledgeChange={setAcknowledged}
             />
           )}
-          {step === 6 && <Step6AddressSubmit state={state} onChange={update} errors={addressErrors} />}
+          {step === LOCATION_STEP && <Step6Location state={state} onChange={update} errors={addressErrors} />}
+          {step === 7 && <Step7DoctorRequest state={state} result={triageResult} />}
 
           {submitError ? <Text style={styles.errorText}>{submitError}</Text> : null}
 
@@ -186,7 +205,7 @@ export function RequestVisitScreen({ navigation, route }: Props) {
             )}
             <View style={styles.actionButton}>
               {step < TOTAL_STEPS ? (
-                <Button title="Next" onPress={() => setStep((s) => s + 1)} disabled={!canProceed()} />
+                <Button title="Next" onPress={handleNext} disabled={!canProceed()} />
               ) : (
                 <Button
                   title={createVisit.isPending ? 'Submitting…' : 'Request visit'}

@@ -13,6 +13,16 @@ exports.SymptomAnswerSchema = zod_1.z.object({
     startedAt: zod_1.z.string().optional(),
     severity: zod_1.z.enum(SEVERITY_VALUES).optional(),
     associatedSigns: zod_1.z.record(zod_1.z.boolean()).optional(),
+    bodyRegion: zod_1.z.string().optional(),
+    numericReadings: zod_1.z
+        .object({
+        systolic: zod_1.z.coerce.number().optional(),
+        diastolic: zod_1.z.coerce.number().optional(),
+        temperature: zod_1.z.coerce.number().optional(),
+        temperatureUnit: zod_1.z.enum(['C', 'F']).optional(),
+    })
+        .optional(),
+    knownCondition: zod_1.z.boolean().optional(),
 });
 exports.TriageAnswersSchema = zod_1.z.object({
     symptoms: zod_1.z.array(exports.SymptomAnswerSchema).min(1),

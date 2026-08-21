@@ -3,7 +3,7 @@ import { Field } from '../../../components/Field';
 import { colors, fonts } from '../../../theme/colors';
 import type { WizardState } from './types';
 
-export function Step6AddressSubmit({
+export function Step6Location({
   state,
   onChange,
   errors,
@@ -14,7 +14,8 @@ export function Step6AddressSubmit({
 }) {
   return (
     <View>
-      <Text style={styles.title}>Where should the doctor come?</Text>
+      <Text style={styles.title}>Location</Text>
+      <Text style={styles.subtitle}>Where should the doctor come?</Text>
       <Field label="Additional notes (optional)" value={state.notes} onChangeText={(v) => onChange({ notes: v })} multiline />
       <Field label="Address line 1" value={state.addressLine1} onChangeText={(v) => onChange({ addressLine1: v })} error={errors.addressLine1} />
       <Field label="Address line 2 (optional)" value={state.addressLine2} onChangeText={(v) => onChange({ addressLine2: v })} />
@@ -26,5 +27,6 @@ export function Step6AddressSubmit({
 }
 
 const styles = StyleSheet.create({
-  title: { fontFamily: fonts.bold, fontSize: 18, color: colors.text, marginBottom: 12 },
+  title: { fontFamily: fonts.bold, fontSize: 18, color: colors.text, marginBottom: 4 },
+  subtitle: { fontFamily: fonts.regular, fontSize: 13, color: colors.textMuted, marginBottom: 12 },
 });

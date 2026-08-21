@@ -4,6 +4,14 @@ export interface SymptomDetail {
   duration?: DurationOption;
   severity?: SeverityOption;
   associatedSigns: Record<string, boolean>;
+  bodyRegion?: string;
+  numericReadings?: {
+    systolic?: number;
+    diastolic?: number;
+    temperature?: number;
+    temperatureUnit?: 'C' | 'F';
+  };
+  knownCondition?: boolean;
 }
 
 export interface WizardState {

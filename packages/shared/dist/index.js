@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isTransitionAllowed = exports.getLegalTransitions = exports.VISIT_TRANSITIONS = exports.classifyTriage = exports.TRIAGE_MESSAGES = exports.ASSOCIATED_SIGN_QUESTIONS = exports.SEVERITY_LABELS = exports.SeverityOption = exports.DURATION_LABELS = exports.DurationOption = exports.SYMPTOM_CATEGORIES = exports.TRIAGE_TAXONOMY_NOTICE = exports.TRIAGE_RULE_VERSION = exports.VerifyPaymentSchema = exports.TriagePreviewSchema = exports.TriageAnswersSchema = exports.SymptomAnswerSchema = exports.CancelVisitSchema = exports.UpdateVisitStatusSchema = exports.AssignDoctorSchema = exports.CreateVisitSchema = exports.UpdateDoctorStatusSchema = exports.UpdateDoctorAvailabilitySchema = exports.UpdateProfileSchema = exports.RefreshSchema = exports.SignupDoctorSchema = exports.SignupPatientSchema = exports.LoginSchema = exports.BookingRelation = exports.TriagePriority = exports.PaymentStatus = exports.DoctorStatus = exports.VisitPaymentStatus = exports.VisitStatus = exports.Role = void 0;
+exports.isTransitionAllowed = exports.getLegalTransitions = exports.VISIT_TRANSITIONS = exports.classifyTriage = exports.DIABETES_EXTREME_IDS = exports.DIABETES_CATEGORY_IDS = exports.FEVER_IDS = exports.BP_EXTREME_IDS = exports.ABDOMINAL_PAIN_IDS = exports.TRIAGE_MESSAGES = exports.ASSOCIATED_SIGN_QUESTIONS = exports.BODY_REGION_OPTIONS = exports.SEVERITY_LABELS = exports.SeverityOption = exports.DURATION_LABELS = exports.DurationOption = exports.SYMPTOM_CATEGORIES = exports.TRIAGE_TAXONOMY_NOTICE = exports.TRIAGE_RULE_VERSION = exports.VerifyPaymentSchema = exports.TriagePreviewSchema = exports.TriageAnswersSchema = exports.SymptomAnswerSchema = exports.CancelVisitSchema = exports.UpdateVisitStatusSchema = exports.AssignDoctorSchema = exports.CreateVisitSchema = exports.UpdateDoctorStatusSchema = exports.UpdateDoctorAvailabilitySchema = exports.UpdateProfileSchema = exports.RefreshSchema = exports.SignupDoctorSchema = exports.SignupPatientSchema = exports.LoginSchema = exports.BookingRelation = exports.TriagePriority = exports.PaymentStatus = exports.DoctorStatus = exports.VisitPaymentStatus = exports.VisitStatus = exports.Role = void 0;
 var enums_1 = require("./enums");
 Object.defineProperty(exports, "Role", { enumerable: true, get: function () { return enums_1.Role; } });
 Object.defineProperty(exports, "VisitStatus", { enumerable: true, get: function () { return enums_1.VisitStatus; } });
@@ -36,8 +36,14 @@ Object.defineProperty(exports, "DurationOption", { enumerable: true, get: functi
 Object.defineProperty(exports, "DURATION_LABELS", { enumerable: true, get: function () { return triage_rules_1.DURATION_LABELS; } });
 Object.defineProperty(exports, "SeverityOption", { enumerable: true, get: function () { return triage_rules_1.SeverityOption; } });
 Object.defineProperty(exports, "SEVERITY_LABELS", { enumerable: true, get: function () { return triage_rules_1.SEVERITY_LABELS; } });
+Object.defineProperty(exports, "BODY_REGION_OPTIONS", { enumerable: true, get: function () { return triage_rules_1.BODY_REGION_OPTIONS; } });
 Object.defineProperty(exports, "ASSOCIATED_SIGN_QUESTIONS", { enumerable: true, get: function () { return triage_rules_1.ASSOCIATED_SIGN_QUESTIONS; } });
 Object.defineProperty(exports, "TRIAGE_MESSAGES", { enumerable: true, get: function () { return triage_rules_1.TRIAGE_MESSAGES; } });
+Object.defineProperty(exports, "ABDOMINAL_PAIN_IDS", { enumerable: true, get: function () { return triage_rules_1.ABDOMINAL_PAIN_IDS; } });
+Object.defineProperty(exports, "BP_EXTREME_IDS", { enumerable: true, get: function () { return triage_rules_1.BP_EXTREME_IDS; } });
+Object.defineProperty(exports, "FEVER_IDS", { enumerable: true, get: function () { return triage_rules_1.FEVER_IDS; } });
+Object.defineProperty(exports, "DIABETES_CATEGORY_IDS", { enumerable: true, get: function () { return triage_rules_1.DIABETES_CATEGORY_IDS; } });
+Object.defineProperty(exports, "DIABETES_EXTREME_IDS", { enumerable: true, get: function () { return triage_rules_1.DIABETES_EXTREME_IDS; } });
 Object.defineProperty(exports, "classifyTriage", { enumerable: true, get: function () { return triage_rules_1.classifyTriage; } });
 var visit_transitions_1 = require("./visit-transitions");
 Object.defineProperty(exports, "VISIT_TRANSITIONS", { enumerable: true, get: function () { return visit_transitions_1.VISIT_TRANSITIONS; } });
