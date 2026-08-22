@@ -27,17 +27,17 @@ let AuthController = class AuthController {
         this.authService = authService;
     }
     async signupPatient(body, req, res) {
-        const { accessToken, refreshToken, user } = await this.authService.signupPatient(body);
+        const { accessToken, refreshToken, user } = await this.authService.signupPatient(body, requestContext(req));
         this.setRefreshCookie(res, refreshToken);
         return this.sessionResponse(req, accessToken, refreshToken, user);
     }
     async signupDoctor(body, req, res) {
-        const { accessToken, refreshToken, user } = await this.authService.signupDoctor(body);
+        const { accessToken, refreshToken, user } = await this.authService.signupDoctor(body, requestContext(req));
         this.setRefreshCookie(res, refreshToken);
         return this.sessionResponse(req, accessToken, refreshToken, user);
     }
     async login(body, req, res) {
-        const { accessToken, refreshToken, user } = await this.authService.login(body);
+        const { accessToken, refreshToken, user } = await this.authService.login(body, requestContext(req));
         this.setRefreshCookie(res, refreshToken);
         return this.sessionResponse(req, accessToken, refreshToken, user);
     }
@@ -48,7 +48,7 @@ let AuthController = class AuthController {
         if (!presented) {
             return { accessToken: null, user: null };
         }
-        const { accessToken, refreshToken, user } = await this.authService.refresh(presented);
+        const { accessToken, refreshToken, user } = await this.authService.refresh(presented, requestContext(req));
         this.setRefreshCookie(res, refreshToken);
         return this.sessionResponse(req, accessToken, refreshToken, user);
     }
@@ -57,6 +57,19 @@ let AuthController = class AuthController {
             (this.isMobileClient(req) ? body.refreshToken : undefined) ??
             null;
         await this.authService.logout(presented);
+        res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
+        return { success: true };
+    }
+    async logoutAll(user, res) {
+        await this.authService.logoutAll(user.id);
+        res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
+        return { success: true };
+    }
+    async sessions(user) {
+        return this.authService.listSessions(user.id);
+    }
+    async changePassword(user, body, res) {
+        await this.authService.changePassword(user.id, body.currentPassword, body.newPassword);
         res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
         return { success: true };
     }
@@ -138,6 +151,36 @@ __decorate([
 ], AuthController.prototype, "logout", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('logout-all'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "logoutAll", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('sessions'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "sessions", null);
+__decorate([
+    (0, throttler_1.Throttle)({ default: { limit: 5, ttl: 3_600_000 } }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Patch)('password'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(shared_1.ChangePasswordSchema))),
+    __param(2, (0, common_1.Res)({ passthrough: true })),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "changePassword", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)('me'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
@@ -148,4 +191,7 @@ exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])
 ], AuthController);
+function requestContext(req) {
+    return { ip: req.ip, userAgent: req.headers['user-agent'] };
+}
 //# sourceMappingURL=auth.controller.js.map

@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import type { VisitDto, VisitStatus } from '@ghar-doc/shared';
+import type { ServiceType, VisitDto, VisitStatus } from '@ghar-doc/shared';
 import { useAllVisits, useUpdateVisitStatus } from '../../hooks/useVisits';
 import { VisitStatusBadge } from '../../components/VisitStatusBadge';
 import { TriagePriorityBadge } from '../../components/TriagePriorityBadge';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { AssignDoctorDialog } from './AssignDoctorDialog';
+import { AssignProviderDialog } from './AssignProviderDialog';
 
 const PRIORITY_ORDER = { RED: 0, ORANGE: 1, GREEN: 2 };
 
@@ -22,9 +22,17 @@ const STATUS_FILTERS: { label: string; value: VisitStatus | undefined }[] = [
   { label: 'No provider available', value: 'NO_PROVIDER_AVAILABLE' },
 ];
 
+const SERVICE_TYPE_FILTERS: { label: string; value: ServiceType | undefined }[] = [
+  { label: 'All services', value: undefined },
+  { label: 'Doctor', value: 'DOCTOR_VISIT' },
+  { label: 'Nursing', value: 'NURSING' },
+  { label: 'Physiotherapy', value: 'PHYSIOTHERAPY' },
+];
+
 export function AllVisitsPage() {
   const [status, setStatus] = useState<VisitStatus | undefined>(undefined);
-  const { data: visits, isLoading } = useAllVisits(status);
+  const [serviceType, setServiceType] = useState<ServiceType | undefined>(undefined);
+  const { data: visits, isLoading } = useAllVisits(status, serviceType);
   const [assigning, setAssigning] = useState<VisitDto | null>(null);
   const updateStatus = useUpdateVisitStatus();
 
@@ -35,6 +43,19 @@ export function AllVisitsPage() {
 
   return (
     <div>
+      <div className="mb-2 flex flex-wrap gap-2">
+        {SERVICE_TYPE_FILTERS.map((f) => (
+          <button
+            key={f.label}
+            onClick={() => setServiceType(f.value)}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              serviceType === f.value ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
       <div className="mb-4 flex flex-wrap gap-2">
         {STATUS_FILTERS.map((f) => (
           <button
@@ -76,6 +97,16 @@ export function AllVisitsPage() {
                     Doctor: {visit.doctor.firstName} {visit.doctor.lastName}
                   </p>
                 )}
+                {visit.nurse && (
+                  <p className="text-sm text-slate-600">
+                    Nurse: {visit.nurse.firstName} {visit.nurse.lastName}
+                  </p>
+                )}
+                {visit.physiotherapist && (
+                  <p className="text-sm text-slate-600">
+                    Physiotherapist: {visit.physiotherapist.firstName} {visit.physiotherapist.lastName}
+                  </p>
+                )}
                 {visit.triageSummary && visit.triageSummary.matchedRedFlags.length > 0 && (
                   <p className="mt-1 text-xs text-red-600">
                     Flagged: {visit.triageSummary.matchedRedFlags.map((f) => f.label).join('; ')}
@@ -84,7 +115,9 @@ export function AllVisitsPage() {
               </div>
               {visit.status === 'REQUESTED' && (
                 <div className="flex shrink-0 flex-col gap-2">
-                  <Button onClick={() => setAssigning(visit)}>Assign doctor</Button>
+                  <Button onClick={() => setAssigning(visit)}>
+                    {visit.serviceType === 'NURSING' ? 'Assign nurse' : visit.serviceType === 'PHYSIOTHERAPY' ? 'Assign physiotherapist' : 'Assign doctor'}
+                  </Button>
                   <Button
                     variant="secondary"
                     disabled={updateStatus.isPending}
@@ -111,7 +144,7 @@ export function AllVisitsPage() {
         </div>
       )}
 
-      {assigning && <AssignDoctorDialog visit={assigning} onClose={() => setAssigning(null)} />}
+      {assigning && <AssignProviderDialog visit={assigning} onClose={() => setAssigning(null)} />}
     </div>
   );
 }

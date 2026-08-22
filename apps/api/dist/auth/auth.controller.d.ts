@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { type SignupPatientInput, type SignupDoctorInput, type LoginInput, type RefreshInput } from '@ghar-doc/shared';
+import { type SignupPatientInput, type SignupDoctorInput, type LoginInput, type RefreshInput, type ChangePasswordInput } from '@ghar-doc/shared';
 import { AuthService } from './auth.service';
 import type { AuthenticatedUser } from './types';
 export declare class AuthController {
@@ -45,6 +45,18 @@ export declare class AuthController {
         user: null;
     }>;
     logout(body: RefreshInput, req: Request, res: Response): Promise<{
+        success: boolean;
+    }>;
+    logoutAll(user: AuthenticatedUser, res: Response): Promise<{
+        success: boolean;
+    }>;
+    sessions(user: AuthenticatedUser): Promise<{
+        id: string;
+        createdAt: Date;
+        userAgent: string | null;
+        ip: string | null;
+    }[]>;
+    changePassword(user: AuthenticatedUser, body: ChangePasswordInput, res: Response): Promise<{
         success: boolean;
     }>;
     me(user: AuthenticatedUser): Promise<{

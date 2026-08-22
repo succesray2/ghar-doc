@@ -14,56 +14,110 @@ exports.VisitsService = void 0;
 const common_1 = require("@nestjs/common");
 const shared_1 = require("@ghar-doc/shared");
 const prisma_service_1 = require("../prisma/prisma.service");
+const notifications_service_1 = require("../notifications/notifications.service");
 const visit_status_util_1 = require("./visit-status.util");
+function bookingRef(visitId) {
+    return visitId.slice(-6).toUpperCase();
+}
+const SAFETY_NET_BLOCK_MESSAGE = 'This sounds like it may need urgent medical attention. Please request a doctor visit instead of a routine booking.';
 const VISIT_INCLUDE = {
     patient: { select: { id: true, firstName: true, lastName: true, phone: true } },
     doctor: { select: { id: true, firstName: true, lastName: true, phone: true } },
+    nurse: { select: { id: true, firstName: true, lastName: true, phone: true } },
+    physiotherapist: { select: { id: true, firstName: true, lastName: true, phone: true } },
     triage: true,
+    safetyCheck: true,
 };
 let VisitsService = VisitsService_1 = class VisitsService {
     prisma;
+    notifications;
     logger = new common_1.Logger(VisitsService_1.name);
-    constructor(prisma) {
+    constructor(prisma, notifications) {
         this.prisma = prisma;
+        this.notifications = notifications;
     }
     previewTriage(answers) {
         return (0, shared_1.classifyTriage)(answers);
     }
+    previewSafetyNet(answers) {
+        return (0, shared_1.evaluateSafetyNet)(answers);
+    }
     async create(patientId, input) {
-        const { triageAnswers, redFlagAcknowledged, ...visitFields } = input;
-        const classification = (0, shared_1.classifyTriage)(triageAnswers);
-        if (classification.priority === shared_1.TriagePriority.RED && !redFlagAcknowledged) {
-            throw new common_1.BadRequestException({
-                message: shared_1.TRIAGE_MESSAGES.RED,
-                priority: classification.priority,
-                matchedRedFlags: classification.matchedRedFlags,
+        const { serviceType, triageAnswers, redFlagAcknowledged, nursingDetails, physiotherapyDetails, safetyCheckAnswers, ...commonFields } = input;
+        let visit;
+        if (serviceType === shared_1.ServiceType.NURSING || serviceType === shared_1.ServiceType.PHYSIOTHERAPY) {
+            const { triggered } = (0, shared_1.evaluateSafetyNet)(safetyCheckAnswers);
+            if (triggered) {
+                throw new common_1.BadRequestException({ message: SAFETY_NET_BLOCK_MESSAGE, triggered: true });
+            }
+            const serviceDetails = serviceType === shared_1.ServiceType.NURSING ? nursingDetails : physiotherapyDetails;
+            visit = await this.prisma.$transaction(async (tx) => {
+                const created = await tx.visit.create({
+                    data: {
+                        patientId,
+                        ...commonFields,
+                        serviceType,
+                        serviceDetails: serviceDetails,
+                        priority: shared_1.TriagePriority.GREEN,
+                    },
+                    include: VISIT_INCLUDE,
+                });
+                await tx.visitSafetyCheck.create({
+                    data: {
+                        visitId: created.id,
+                        ruleVersion: shared_1.SAFETY_NET_RULE_VERSION,
+                        answers: safetyCheckAnswers,
+                    },
+                });
+                return created;
             });
         }
-        const visit = await this.prisma.$transaction(async (tx) => {
-            const created = await tx.visit.create({
-                data: { patientId, ...visitFields, priority: classification.priority },
-                include: VISIT_INCLUDE,
-            });
-            await tx.visitTriage.create({
-                data: {
-                    visitId: created.id,
-                    ruleVersion: shared_1.TRIAGE_RULE_VERSION,
-                    answers: triageAnswers,
+        else {
+            const classification = (0, shared_1.classifyTriage)(triageAnswers);
+            if (classification.priority === shared_1.TriagePriority.RED && !redFlagAcknowledged) {
+                throw new common_1.BadRequestException({
+                    message: shared_1.TRIAGE_MESSAGES.RED,
                     priority: classification.priority,
                     matchedRedFlags: classification.matchedRedFlags,
-                    redFlagAcknowledged: classification.priority === shared_1.TriagePriority.RED ? redFlagAcknowledged : false,
-                },
+                });
+            }
+            const created = await this.prisma.$transaction(async (tx) => {
+                const v = await tx.visit.create({
+                    data: { patientId, ...commonFields, serviceType, priority: classification.priority },
+                    include: VISIT_INCLUDE,
+                });
+                await tx.visitTriage.create({
+                    data: {
+                        visitId: v.id,
+                        ruleVersion: shared_1.TRIAGE_RULE_VERSION,
+                        answers: triageAnswers,
+                        priority: classification.priority,
+                        matchedRedFlags: classification.matchedRedFlags,
+                        redFlagAcknowledged: classification.priority === shared_1.TriagePriority.RED ? redFlagAcknowledged : false,
+                    },
+                });
+                return v;
             });
-            return created;
-        });
-        return this.mapVisit({
-            ...visit,
-            triage: { priority: classification.priority, matchedRedFlags: classification.matchedRedFlags, answers: triageAnswers },
-        });
+            visit = {
+                ...created,
+                triage: {
+                    id: '',
+                    visitId: created.id,
+                    ruleVersion: shared_1.TRIAGE_RULE_VERSION,
+                    priority: classification.priority,
+                    matchedRedFlags: classification.matchedRedFlags,
+                    answers: triageAnswers,
+                    redFlagAcknowledged: classification.priority === shared_1.TriagePriority.RED ? redFlagAcknowledged : false,
+                    createdAt: created.createdAt,
+                },
+            };
+        }
+        await this.notifications.notify(patientId, shared_1.NotificationCategory.BOOKING_UPDATE, 'Request received', `Your GharDoc request has been received. Booking ID: ${bookingRef(visit.id)}. Our team is reviewing your request.`, visit.id);
+        return this.mapVisit(visit);
     }
-    async findAll(status) {
+    async findAll(status, serviceType) {
         const visits = await this.prisma.visit.findMany({
-            where: status ? { status } : undefined,
+            where: { ...(status ? { status } : {}), ...(serviceType ? { serviceType } : {}) },
             include: VISIT_INCLUDE,
             orderBy: { requestedAt: 'desc' },
         });
@@ -77,9 +131,14 @@ let VisitsService = VisitsService_1 = class VisitsService {
         });
         return visits.map((v) => this.mapVisit(v));
     }
-    async findAssigned(doctorId) {
+    async findAssigned(actor) {
+        const where = actor.role === shared_1.Role.NURSE
+            ? { nurseId: actor.id }
+            : actor.role === shared_1.Role.PHYSIOTHERAPIST
+                ? { physiotherapistId: actor.id }
+                : { doctorId: actor.id };
         const visits = await this.prisma.visit.findMany({
-            where: { doctorId },
+            where,
             include: VISIT_INCLUDE,
             orderBy: { requestedAt: 'desc' },
         });
@@ -92,27 +151,79 @@ let VisitsService = VisitsService_1 = class VisitsService {
         this.assertCanView(visit, user);
         return this.mapVisit(visit);
     }
-    async assign(id, doctorId, actor, ctx) {
+    async assign(id, providerId, actor, ctx) {
         const visit = await this.getOrThrow(id);
         if (!(0, visit_status_util_1.isTransitionAllowed)(visit.status, shared_1.VisitStatus.ASSIGNED, actor.role)) {
             throw new common_1.BadRequestException(`Cannot assign a visit in status ${visit.status}`);
         }
-        const doctorProfile = await this.prisma.doctorProfile.findUnique({ where: { userId: doctorId } });
-        if (!doctorProfile || doctorProfile.status !== shared_1.DoctorStatus.APPROVED) {
-            throw new common_1.BadRequestException('Doctor is not approved for assignment');
+        let extraData;
+        if (visit.serviceType === shared_1.ServiceType.NURSING) {
+            const profile = await this.prisma.nurseProfile.findUnique({ where: { userId: providerId } });
+            if (!profile || profile.status !== shared_1.NurseStatus.ACTIVE) {
+                throw new common_1.BadRequestException('Nurse is not active for assignment');
+            }
+            extraData = { nurseId: providerId };
         }
-        this.logger.log(`Visit ${visit.id} assigned to doctor ${doctorId} by admin ${actor.id}`);
-        return this.transition(visit, shared_1.VisitStatus.ASSIGNED, actor, { doctorId }, ctx);
+        else if (visit.serviceType === shared_1.ServiceType.PHYSIOTHERAPY) {
+            const profile = await this.prisma.physiotherapistProfile.findUnique({ where: { userId: providerId } });
+            if (!profile || profile.status !== shared_1.PhysiotherapistStatus.ACTIVE) {
+                throw new common_1.BadRequestException('Physiotherapist is not active for assignment');
+            }
+            extraData = { physiotherapistId: providerId };
+        }
+        else {
+            const doctorProfile = await this.prisma.doctorProfile.findUnique({ where: { userId: providerId } });
+            if (!doctorProfile || doctorProfile.status !== shared_1.DoctorStatus.APPROVED) {
+                throw new common_1.BadRequestException('Doctor is not approved for assignment');
+            }
+            extraData = { doctorId: providerId };
+        }
+        this.logger.log(`Visit ${visit.id} (${visit.serviceType}) assigned to ${providerId} by admin ${actor.id}`);
+        const updated = await this.transition(visit, shared_1.VisitStatus.ASSIGNED, actor, extraData, ctx);
+        const ref = bookingRef(visit.id);
+        await this.notifications.notify(visit.patientId, shared_1.NotificationCategory.PROVIDER_ASSIGNMENT, 'Provider assigned', `Your GharDoc request ${ref} has been assigned to a verified professional.`, visit.id);
+        await this.notifications.notify(providerId, shared_1.NotificationCategory.PROVIDER_ASSIGNMENT, 'New visit request', `You have a new visit request. Booking ID: ${ref}.`, visit.id);
+        return updated;
     }
     async updateStatus(id, status, actor, ctx) {
         const visit = await this.getOrThrow(id);
         if (actor.role === shared_1.Role.DOCTOR && visit.doctorId !== actor.id) {
             throw new common_1.ForbiddenException('You are not assigned to this visit');
         }
+        if (actor.role === shared_1.Role.NURSE && visit.nurseId !== actor.id) {
+            throw new common_1.ForbiddenException('You are not assigned to this visit');
+        }
+        if (actor.role === shared_1.Role.PHYSIOTHERAPIST && visit.physiotherapistId !== actor.id) {
+            throw new common_1.ForbiddenException('You are not assigned to this visit');
+        }
         if (!(0, visit_status_util_1.isTransitionAllowed)(visit.status, status, actor.role)) {
             throw new common_1.BadRequestException(`Cannot move visit from ${visit.status} to ${status}`);
         }
-        return this.transition(visit, status, actor, {}, ctx);
+        const ref = bookingRef(visit.id);
+        if (status === shared_1.VisitStatus.PROVIDER_DECLINED) {
+            const clearField = visit.serviceType === shared_1.ServiceType.NURSING
+                ? 'nurseId'
+                : visit.serviceType === shared_1.ServiceType.PHYSIOTHERAPY
+                    ? 'physiotherapistId'
+                    : 'doctorId';
+            const updated = await this.chainedTransition(visit, [
+                { toStatus: shared_1.VisitStatus.PROVIDER_DECLINED, extraData: {} },
+                { toStatus: shared_1.VisitStatus.REQUESTED, extraData: { [clearField]: null } },
+            ], actor, ctx);
+            await this.notifications.notify(visit.patientId, shared_1.NotificationCategory.BOOKING_UPDATE, 'Request under review', `Your GharDoc request ${ref} is being reviewed for reassignment.`, visit.id);
+            return updated;
+        }
+        const updated = await this.transition(visit, status, actor, {}, ctx);
+        if (status === shared_1.VisitStatus.PROVIDER_ACCEPTED) {
+            await this.notifications.notify(visit.patientId, shared_1.NotificationCategory.PROVIDER_ASSIGNMENT, 'Provider accepted', `Your GharDoc provider has accepted booking ${ref}.`, visit.id);
+        }
+        else if (status === shared_1.VisitStatus.ARRIVED) {
+            await this.notifications.notify(visit.patientId, shared_1.NotificationCategory.PROVIDER_ARRIVAL, 'Provider arrived', `Your GharDoc provider has arrived for booking ${ref}.`, visit.id);
+        }
+        else if (status === shared_1.VisitStatus.NO_PROVIDER_AVAILABLE) {
+            await this.notifications.notify(visit.patientId, shared_1.NotificationCategory.BOOKING_UPDATE, 'Assignment update', `We are currently unable to assign a provider for booking ${ref}. Our support team will contact you.`, visit.id);
+        }
+        return updated;
     }
     async cancel(id, actor, reason, ctx) {
         const visit = await this.getOrThrow(id);
@@ -125,10 +236,15 @@ let VisitsService = VisitsService_1 = class VisitsService {
         return this.transition(visit, shared_1.VisitStatus.CANCELLED, actor, { cancellationReason: reason ?? null }, ctx);
     }
     async safetyStats() {
+        const DOCTOR_VISIT_ONLY = { serviceType: shared_1.ServiceType.DOCTOR_VISIT };
         const [byPriorityRaw, unassignedRaw, cancelled] = await Promise.all([
-            this.prisma.visit.groupBy({ by: ['priority'], _count: { _all: true } }),
-            this.prisma.visit.groupBy({ by: ['priority'], where: { status: shared_1.VisitStatus.REQUESTED }, _count: { _all: true } }),
-            this.prisma.visit.count({ where: { status: shared_1.VisitStatus.CANCELLED } }),
+            this.prisma.visit.groupBy({ by: ['priority'], where: DOCTOR_VISIT_ONLY, _count: { _all: true } }),
+            this.prisma.visit.groupBy({
+                by: ['priority'],
+                where: { ...DOCTOR_VISIT_ONLY, status: shared_1.VisitStatus.REQUESTED },
+                _count: { _all: true },
+            }),
+            this.prisma.visit.count({ where: { ...DOCTOR_VISIT_ONLY, status: shared_1.VisitStatus.CANCELLED } }),
         ]);
         const byPriority = { GREEN: 0, ORANGE: 0, RED: 0 };
         byPriorityRaw.forEach((r) => {
@@ -141,31 +257,37 @@ let VisitsService = VisitsService_1 = class VisitsService {
         return { byPriority, cancelled, unassignedByPriority };
     }
     async transition(visit, toStatus, actor, extraData = {}, ctx) {
-        const timestampField = (0, visit_status_util_1.timestampFieldFor)(toStatus);
+        return this.chainedTransition(visit, [{ toStatus, extraData }], actor, ctx);
+    }
+    async chainedTransition(visit, hops, actor, ctx) {
         const result = await this.prisma.$transaction(async (tx) => {
-            const claim = await tx.visit.updateMany({
-                where: { id: visit.id, status: visit.status },
-                data: {
-                    status: toStatus,
-                    ...(timestampField ? { [timestampField]: new Date() } : {}),
-                    ...extraData,
-                },
-            });
-            if (claim.count === 0) {
-                throw new common_1.ConflictException('This visit was just updated — please refresh and try again.');
+            let fromStatus = visit.status;
+            for (const hop of hops) {
+                const timestampField = (0, visit_status_util_1.timestampFieldFor)(hop.toStatus);
+                const claim = await tx.visit.updateMany({
+                    where: { id: visit.id, status: fromStatus },
+                    data: {
+                        status: hop.toStatus,
+                        ...(timestampField ? { [timestampField]: new Date() } : {}),
+                        ...hop.extraData,
+                    },
+                });
+                if (claim.count === 0) {
+                    throw new common_1.ConflictException('This visit was just updated — please refresh and try again.');
+                }
+                await tx.visitStatusEvent.create({
+                    data: {
+                        visitId: visit.id,
+                        fromStatus,
+                        toStatus: hop.toStatus,
+                        changedById: actor.id,
+                        ipAddress: ctx?.ip,
+                        userAgent: ctx?.userAgent,
+                    },
+                });
+                fromStatus = hop.toStatus;
             }
-            const updated = await tx.visit.findUniqueOrThrow({ where: { id: visit.id }, include: VISIT_INCLUDE });
-            await tx.visitStatusEvent.create({
-                data: {
-                    visitId: visit.id,
-                    fromStatus: visit.status,
-                    toStatus,
-                    changedById: actor.id,
-                    ipAddress: ctx?.ip,
-                    userAgent: ctx?.userAgent,
-                },
-            });
-            return updated;
+            return tx.visit.findUniqueOrThrow({ where: { id: visit.id }, include: VISIT_INCLUDE });
         });
         return this.mapVisit(result);
     }
@@ -182,10 +304,14 @@ let VisitsService = VisitsService_1 = class VisitsService {
             return;
         if (user.role === shared_1.Role.DOCTOR && visit.doctorId === user.id)
             return;
+        if (user.role === shared_1.Role.NURSE && visit.nurseId === user.id)
+            return;
+        if (user.role === shared_1.Role.PHYSIOTHERAPIST && visit.physiotherapistId === user.id)
+            return;
         throw new common_1.ForbiddenException('You do not have access to this visit');
     }
     mapVisit(visit) {
-        const { triage, ...rest } = visit;
+        const { triage, safetyCheck: _safetyCheck, ...rest } = visit;
         if (!triage) {
             return { ...rest, triageSummary: null };
         }
@@ -203,6 +329,7 @@ let VisitsService = VisitsService_1 = class VisitsService {
 exports.VisitsService = VisitsService;
 exports.VisitsService = VisitsService = VisitsService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        notifications_service_1.NotificationsService])
 ], VisitsService);
 //# sourceMappingURL=visits.service.js.map

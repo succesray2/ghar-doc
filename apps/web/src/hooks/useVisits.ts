@@ -1,5 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CreateVisitInput, SafetyStatsDto, TriageAnswersInput, TriageResult, VisitDto, VisitStatus } from '@ghar-doc/shared';
+import type {
+  CreateVisitInput,
+  SafetyNetAnswers,
+  SafetyNetResult,
+  SafetyStatsDto,
+  ServiceType,
+  TriageAnswersInput,
+  TriageResult,
+  VisitDto,
+  VisitStatus,
+} from '@ghar-doc/shared';
 import { apiClient } from '../lib/api-client';
 
 export function useMyVisits() {
@@ -24,11 +34,11 @@ export function useAssignedVisits() {
   });
 }
 
-export function useAllVisits(status?: VisitStatus) {
+export function useAllVisits(status?: VisitStatus, serviceType?: ServiceType) {
   return useQuery({
-    queryKey: ['visits', 'all', status ?? 'ALL'],
+    queryKey: ['visits', 'all', status ?? 'ALL', serviceType ?? 'ALL'],
     queryFn: async () => {
-      const { data } = await apiClient.get<VisitDto[]>('/visits', { params: status ? { status } : undefined });
+      const { data } = await apiClient.get<VisitDto[]>('/visits', { params: { status, serviceType } });
       return data;
     },
     refetchInterval: 8000,
@@ -39,6 +49,15 @@ export function useTriagePreview() {
   return useMutation({
     mutationFn: async (triageAnswers: TriageAnswersInput) => {
       const { data } = await apiClient.post<TriageResult>('/visits/triage-preview', { triageAnswers });
+      return data;
+    },
+  });
+}
+
+export function useSafetyNetPreview() {
+  return useMutation({
+    mutationFn: async (safetyCheckAnswers: SafetyNetAnswers) => {
+      const { data } = await apiClient.post<SafetyNetResult>('/visits/safety-check-preview', { safetyCheckAnswers });
       return data;
     },
   });

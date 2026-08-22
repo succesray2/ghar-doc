@@ -13,9 +13,12 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 // Registered as a tab screen on both the Doctor and Admin stacks — typed
-// against just the one cross-stack navigation call it makes.
+// against just the navigation calls it makes. Nurses/Physiotherapists only
+// ever get navigated to from the Admin stack (gated by role below), but the
+// type stays shared since Doctor's real getParent() is structurally
+// compatible regardless (a generic NavigationProp accepts any route name).
 interface Props {
-  navigation: { getParent: () => { navigate: (screen: 'Settings') => void } | undefined };
+  navigation: { getParent: () => { navigate: (screen: 'Settings' | 'Nurses' | 'Physiotherapists') => void } | undefined };
 }
 
 export function ProfileScreen({ navigation }: Props) {
@@ -43,6 +46,25 @@ export function ProfileScreen({ navigation }: Props) {
         <Row label="Email" value={user.email} />
         <Row label="Phone" value={user.phone ?? '—'} last />
       </Card>
+
+      {user.role === 'ADMIN' ? (
+        <>
+          <Pressable onPress={() => rootNav?.navigate('Nurses')}>
+            <Card style={styles.settingsRow}>
+              <Feather name="user-plus" size={18} color={colors.navy700} />
+              <Text style={styles.settingsLabel}>Manage Nurses</Text>
+              <Feather name="chevron-right" size={18} color={colors.ink400} />
+            </Card>
+          </Pressable>
+          <Pressable onPress={() => rootNav?.navigate('Physiotherapists')}>
+            <Card style={styles.settingsRow}>
+              <Feather name="user-plus" size={18} color={colors.navy700} />
+              <Text style={styles.settingsLabel}>Manage Physiotherapists</Text>
+              <Feather name="chevron-right" size={18} color={colors.ink400} />
+            </Card>
+          </Pressable>
+        </>
+      ) : null}
 
       <Pressable onPress={() => rootNav?.navigate('Settings')}>
         <Card style={styles.settingsRow}>

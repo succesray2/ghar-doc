@@ -100,6 +100,10 @@ export function homeForRole(role: UserDto['role']): string {
       return '/admin/visits';
     case 'DOCTOR':
       return '/doctor/visits';
+    case 'NURSE':
+      return '/nurse/visits';
+    case 'PHYSIOTHERAPIST':
+      return '/physio/visits';
     default:
       return '/patient/visits';
   }

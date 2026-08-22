@@ -32,14 +32,17 @@ let VisitsController = class VisitsController {
     previewTriage(body) {
         return this.visitsService.previewTriage(body.triageAnswers);
     }
-    findAll(status) {
-        return this.visitsService.findAll(status);
+    previewSafetyNet(body) {
+        return this.visitsService.previewSafetyNet(body.safetyCheckAnswers);
+    }
+    findAll(status, serviceType) {
+        return this.visitsService.findAll(status, serviceType);
     }
     findMine(user) {
         return this.visitsService.findMine(user.id);
     }
     findAssigned(user) {
-        return this.visitsService.findAssigned(user.id);
+        return this.visitsService.findAssigned(user);
     }
     safetyStats() {
         return this.visitsService.safetyStats();
@@ -48,7 +51,8 @@ let VisitsController = class VisitsController {
         return this.visitsService.findOneForUser(id, user);
     }
     assign(id, body, user, req) {
-        return this.visitsService.assign(id, body.doctorId, user, requestContext(req));
+        const providerId = body.doctorId ?? body.nurseId ?? body.physiotherapistId;
+        return this.visitsService.assign(id, providerId, user, requestContext(req));
     }
     updateStatus(id, body, user, req) {
         return this.visitsService.updateStatus(id, body.status, user, requestContext(req));
@@ -76,11 +80,20 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VisitsController.prototype, "previewTriage", null);
 __decorate([
+    (0, roles_decorator_1.Roles)(shared_1.Role.PATIENT),
+    (0, common_1.Post)('safety-check-preview'),
+    __param(0, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(shared_1.SafetyNetPreviewSchema))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], VisitsController.prototype, "previewSafetyNet", null);
+__decorate([
     (0, roles_decorator_1.Roles)(shared_1.Role.ADMIN),
     (0, common_1.Get)(),
     __param(0, (0, common_1.Query)('status')),
+    __param(1, (0, common_1.Query)('serviceType')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], VisitsController.prototype, "findAll", null);
 __decorate([
@@ -92,7 +105,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VisitsController.prototype, "findMine", null);
 __decorate([
-    (0, roles_decorator_1.Roles)(shared_1.Role.DOCTOR),
+    (0, roles_decorator_1.Roles)(shared_1.Role.DOCTOR, shared_1.Role.NURSE, shared_1.Role.PHYSIOTHERAPIST),
     (0, common_1.Get)('assigned'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
@@ -118,7 +131,7 @@ __decorate([
     (0, roles_decorator_1.Roles)(shared_1.Role.ADMIN),
     (0, common_1.Patch)(':id/assign'),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(shared_1.AssignDoctorSchema))),
+    __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(shared_1.AssignProviderSchema))),
     __param(2, (0, current_user_decorator_1.CurrentUser)()),
     __param(3, (0, common_1.Req)()),
     __metadata("design:type", Function),
@@ -126,7 +139,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VisitsController.prototype, "assign", null);
 __decorate([
-    (0, roles_decorator_1.Roles)(shared_1.Role.DOCTOR),
+    (0, roles_decorator_1.Roles)(shared_1.Role.DOCTOR, shared_1.Role.NURSE, shared_1.Role.PHYSIOTHERAPIST, shared_1.Role.ADMIN),
     (0, common_1.Patch)(':id/status'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)(new zod_validation_pipe_1.ZodValidationPipe(shared_1.UpdateVisitStatusSchema))),

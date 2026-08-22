@@ -72,7 +72,7 @@ let AuthService = AuthService_1 = class AuthService {
         this.jwt = jwt;
         this.config = config;
     }
-    async signupPatient(input) {
+    async signupPatient(input, ctx) {
         await this.assertEmailFree(input.email);
         const passwordHash = await bcrypt.hash(input.password, 10);
         const user = await this.prisma.user.create({
@@ -94,9 +94,9 @@ let AuthService = AuthService_1 = class AuthService {
                 },
             },
         });
-        return this.issueSession(user.id, user.email, user.role);
+        return this.issueSession(user.id, user.email, user.role, undefined, ctx);
     }
-    async signupDoctor(input) {
+    async signupDoctor(input, ctx) {
         await this.assertEmailFree(input.email);
         const passwordHash = await bcrypt.hash(input.password, 10);
         const user = await this.prisma.user.create({
@@ -117,9 +117,9 @@ let AuthService = AuthService_1 = class AuthService {
                 },
             },
         });
-        return this.issueSession(user.id, user.email, user.role);
+        return this.issueSession(user.id, user.email, user.role, undefined, ctx);
     }
-    async login(input) {
+    async login(input, ctx) {
         const user = await this.prisma.user.findUnique({ where: { email: input.email } });
         const now = new Date();
         if (!user || !user.isActive || (user.lockedUntil && user.lockedUntil > now)) {
@@ -147,9 +147,9 @@ let AuthService = AuthService_1 = class AuthService {
             });
         }
         this.logger.log(`Successful login for ${user.email}`);
-        return this.issueSession(user.id, user.email, user.role);
+        return this.issueSession(user.id, user.email, user.role, undefined, ctx);
     }
-    async refresh(presentedToken) {
+    async refresh(presentedToken, ctx) {
         const tokenHash = this.hashToken(presentedToken);
         const stored = await this.prisma.refreshToken.findUnique({ where: { tokenHash } });
         if (!stored) {
@@ -160,18 +160,18 @@ let AuthService = AuthService_1 = class AuthService {
         }
         const claim = await this.prisma.refreshToken.updateMany({
             where: { id: stored.id, revokedAt: null },
-            data: { revokedAt: new Date() },
+            data: { revokedAt: new Date(), revokedReason: 'ROTATED' },
         });
         if (claim.count === 0) {
             await this.prisma.refreshToken.updateMany({
                 where: { familyId: stored.familyId, revokedAt: null },
-                data: { revokedAt: new Date() },
+                data: { revokedAt: new Date(), revokedReason: 'REUSE_DETECTED' },
             });
             this.logger.warn(`Refresh-token reuse detected for user ${stored.userId} — token family ${stored.familyId} revoked`);
             throw new common_1.UnauthorizedException('Refresh token is invalid or expired');
         }
         const user = await this.prisma.user.findUniqueOrThrow({ where: { id: stored.userId } });
-        return this.issueSession(user.id, user.email, user.role, stored.familyId);
+        return this.issueSession(user.id, user.email, user.role, stored.familyId, ctx);
     }
     async logout(presentedToken) {
         if (!presentedToken)
@@ -179,8 +179,37 @@ let AuthService = AuthService_1 = class AuthService {
         const tokenHash = this.hashToken(presentedToken);
         await this.prisma.refreshToken.updateMany({
             where: { tokenHash, revokedAt: null },
-            data: { revokedAt: new Date() },
+            data: { revokedAt: new Date(), revokedReason: 'USER_LOGOUT' },
         });
+    }
+    async logoutAll(userId) {
+        await this.prisma.refreshToken.updateMany({
+            where: { userId, revokedAt: null },
+            data: { revokedAt: new Date(), revokedReason: 'USER_LOGOUT_ALL' },
+        });
+    }
+    async listSessions(userId) {
+        return this.prisma.refreshToken.findMany({
+            where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, userAgent: true, ip: true, createdAt: true },
+        });
+    }
+    async changePassword(userId, currentPassword, newPassword) {
+        const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+        const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!valid) {
+            throw new common_1.BadRequestException('Current password is incorrect');
+        }
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+        await this.prisma.$transaction([
+            this.prisma.user.update({ where: { id: userId }, data: { passwordHash } }),
+            this.prisma.refreshToken.updateMany({
+                where: { userId, revokedAt: null },
+                data: { revokedAt: new Date(), revokedReason: 'PASSWORD_CHANGE' },
+            }),
+        ]);
+        this.logger.log(`Password changed for user ${userId} — all sessions revoked`);
     }
     async me(userId) {
         return this.prisma.user.findUniqueOrThrow({
@@ -194,7 +223,7 @@ let AuthService = AuthService_1 = class AuthService {
             throw new common_1.ConflictException('An account with this email already exists');
         }
     }
-    async issueSession(userId, email, role, familyId) {
+    async issueSession(userId, email, role, familyId, ctx) {
         const accessToken = this.jwt.sign({ sub: userId, email, role }, {
             secret: this.config.get('JWT_ACCESS_SECRET'),
             expiresIn: this.config.get('JWT_ACCESS_EXPIRES'),
@@ -203,7 +232,14 @@ let AuthService = AuthService_1 = class AuthService {
         const tokenHash = this.hashToken(refreshToken);
         const expiresAt = this.addDuration(new Date(), this.config.get('JWT_REFRESH_EXPIRES') ?? '30d');
         await this.prisma.refreshToken.create({
-            data: { userId, tokenHash, expiresAt, familyId: familyId ?? crypto.randomUUID() },
+            data: {
+                userId,
+                tokenHash,
+                expiresAt,
+                familyId: familyId ?? crypto.randomUUID(),
+                userAgent: ctx?.userAgent,
+                ip: ctx?.ip,
+            },
         });
         return { accessToken, refreshToken, user: { id: userId, email, role } };
     }

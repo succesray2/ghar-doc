@@ -1,10 +1,13 @@
 import { z } from 'zod';
-import { VisitStatus, BookingRelation } from './enums';
+import { VisitStatus, BookingRelation, ServiceType } from './enums';
 import { DurationOption, SeverityOption } from './triage-rules';
+import { NursingServiceDetailsSchema, PhysiotherapyServiceDetailsSchema } from './service-intake';
+import { SafetyNetAnswersSchema } from './safety-net';
 
 const DURATION_VALUES = Object.values(DurationOption) as [string, ...string[]];
 const SEVERITY_VALUES = Object.values(SeverityOption) as [string, ...string[]];
 const BOOKING_RELATION_VALUES = Object.values(BookingRelation) as [string, ...string[]];
+const SERVICE_TYPE_VALUES = Object.values(ServiceType) as [ServiceType, ...ServiceType[]];
 
 export const SymptomAnswerSchema = z.object({
   symptomId: z.string().min(1),
@@ -37,6 +40,7 @@ export type TriagePreviewInput = z.infer<typeof TriagePreviewSchema>;
 
 export const CreateVisitSchema = z
   .object({
+    serviceType: z.enum(SERVICE_TYPE_VALUES).default('DOCTOR_VISIT'),
     reasonForVisit: z.string().min(3),
     notes: z.string().optional(),
     addressLine1: z.string().min(1),
@@ -50,8 +54,16 @@ export const CreateVisitSchema = z
     patientSex: z.string().optional(),
     caregiverName: z.string().min(1).optional(),
     caregiverPhone: z.string().min(7).optional(),
-    triageAnswers: TriageAnswersSchema,
+    // Required only for serviceType DOCTOR_VISIT — see superRefine below.
+    // Optional here (rather than a discriminated union) so an old client
+    // posting today's exact payload, with no serviceType field at all,
+    // keeps behaving byte-identical to today.
+    triageAnswers: TriageAnswersSchema.optional(),
     redFlagAcknowledged: z.boolean().default(false),
+    // Required only for serviceType NURSING / PHYSIOTHERAPY respectively.
+    nursingDetails: NursingServiceDetailsSchema.optional(),
+    physiotherapyDetails: PhysiotherapyServiceDetailsSchema.optional(),
+    safetyCheckAnswers: SafetyNetAnswersSchema.optional(),
   })
   .superRefine((data, ctx) => {
     if (data.bookingFor !== 'SELF') {
@@ -65,13 +77,41 @@ export const CreateVisitSchema = z
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['caregiverPhone'], message: 'Required when booking for someone else' });
       }
     }
+    if (data.serviceType === 'DOCTOR_VISIT' && !data.triageAnswers) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['triageAnswers'], message: 'Required for a doctor visit request' });
+    }
+    if (data.serviceType === 'NURSING') {
+      if (!data.nursingDetails) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['nursingDetails'], message: 'Required for a nursing request' });
+      }
+      if (!data.safetyCheckAnswers) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['safetyCheckAnswers'], message: 'Required for a nursing request' });
+      }
+    }
+    if (data.serviceType === 'PHYSIOTHERAPY') {
+      if (!data.physiotherapyDetails) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['physiotherapyDetails'], message: 'Required for a physiotherapy request' });
+      }
+      if (!data.safetyCheckAnswers) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['safetyCheckAnswers'], message: 'Required for a physiotherapy request' });
+      }
+    }
   });
 export type CreateVisitInput = z.infer<typeof CreateVisitSchema>;
 
-export const AssignDoctorSchema = z.object({
-  doctorId: z.string().min(1),
-});
-export type AssignDoctorInput = z.infer<typeof AssignDoctorSchema>;
+export const AssignProviderSchema = z
+  .object({
+    doctorId: z.string().min(1).optional(),
+    nurseId: z.string().min(1).optional(),
+    physiotherapistId: z.string().min(1).optional(),
+  })
+  .superRefine((data, ctx) => {
+    const provided = [data.doctorId, data.nurseId, data.physiotherapistId].filter(Boolean);
+    if (provided.length !== 1) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Exactly one of doctorId, nurseId, or physiotherapistId is required' });
+    }
+  });
+export type AssignProviderInput = z.infer<typeof AssignProviderSchema>;
 
 const VISIT_STATUS_VALUES = Object.values(VisitStatus) as [string, ...string[]];
 

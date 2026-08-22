@@ -23,13 +23,13 @@ export declare class DoctorsService {
     statusHistory(doctorUserId: string): Promise<{
         id: string;
         createdAt: Date;
+        userAgent: string | null;
         doctorProfileId: string;
         fromStatus: import("@prisma/client").$Enums.DoctorStatus | null;
         toStatus: import("@prisma/client").$Enums.DoctorStatus;
         reason: string | null;
         changedById: string;
         ipAddress: string | null;
-        userAgent: string | null;
     }[]>;
     updateStatus(doctorUserId: string, toStatus: DoctorStatus, reason: string | undefined, actorId: string, ctx?: RequestContext): Promise<{
         status: import("@prisma/client").$Enums.DoctorStatus;

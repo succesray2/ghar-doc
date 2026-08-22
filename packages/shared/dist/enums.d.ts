@@ -2,6 +2,8 @@ export declare const Role: {
     readonly PATIENT: "PATIENT";
     readonly DOCTOR: "DOCTOR";
     readonly ADMIN: "ADMIN";
+    readonly NURSE: "NURSE";
+    readonly PHYSIOTHERAPIST: "PHYSIOTHERAPIST";
 };
 export type Role = (typeof Role)[keyof typeof Role];
 export declare const VisitStatus: {
@@ -30,6 +32,22 @@ export declare const DoctorStatus: {
     readonly SUSPENDED: "SUSPENDED";
 };
 export type DoctorStatus = (typeof DoctorStatus)[keyof typeof DoctorStatus];
+export declare const NurseStatus: {
+    readonly ACTIVE: "ACTIVE";
+    readonly SUSPENDED: "SUSPENDED";
+};
+export type NurseStatus = (typeof NurseStatus)[keyof typeof NurseStatus];
+export declare const PhysiotherapistStatus: {
+    readonly ACTIVE: "ACTIVE";
+    readonly SUSPENDED: "SUSPENDED";
+};
+export type PhysiotherapistStatus = (typeof PhysiotherapistStatus)[keyof typeof PhysiotherapistStatus];
+export declare const ServiceType: {
+    readonly DOCTOR_VISIT: "DOCTOR_VISIT";
+    readonly NURSING: "NURSING";
+    readonly PHYSIOTHERAPY: "PHYSIOTHERAPY";
+};
+export type ServiceType = (typeof ServiceType)[keyof typeof ServiceType];
 export declare const PaymentStatus: {
     readonly CREATED: "CREATED";
     readonly PAID: "PAID";

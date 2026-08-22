@@ -1,6 +1,8 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PatientTabs } from './PatientTabs';
 import { RequestVisitScreen } from '../screens/patient/RequestVisitScreen';
+import { RequestNursingScreen } from '../screens/patient/RequestNursingScreen';
+import { RequestPhysiotherapyScreen } from '../screens/patient/RequestPhysiotherapyScreen';
 import { DoctorProfileScreen } from '../screens/patient/DoctorProfileScreen';
 import { MockBookingScreen } from '../screens/patient/MockBookingScreen';
 import { BookingConfirmationScreen } from '../screens/patient/BookingConfirmationScreen';
@@ -34,6 +36,8 @@ export function PatientNavigator() {
     <Stack.Navigator screenOptions={headerOptions}>
       <Stack.Screen name="PatientTabs" component={PatientTabs} options={{ headerShown: false }} />
       <Stack.Screen name="RequestVisit" component={RequestVisitScreen} options={{ title: 'Doctor Home Visit' }} />
+      <Stack.Screen name="RequestNursing" component={RequestNursingScreen} options={{ title: 'Home Nursing' }} />
+      <Stack.Screen name="RequestPhysiotherapy" component={RequestPhysiotherapyScreen} options={{ title: 'Physiotherapy' }} />
       <Stack.Screen name="DoctorProfile" component={DoctorProfileScreen} options={{ title: 'Doctor Profile' }} />
       <Stack.Screen name="MockBooking" component={MockBookingScreen} options={{ title: 'Confirm Booking' }} />
       <Stack.Screen name="BookingConfirmation" component={BookingConfirmationScreen} options={{ headerShown: false }} />

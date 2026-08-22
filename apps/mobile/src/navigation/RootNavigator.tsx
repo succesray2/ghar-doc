@@ -5,6 +5,8 @@ import { colors } from '../theme/colors';
 import { AuthNavigator } from './AuthNavigator';
 import { PatientNavigator } from './PatientNavigator';
 import { DoctorNavigator } from './DoctorNavigator';
+import { NurseNavigator } from './NurseNavigator';
+import { PhysiotherapistNavigator } from './PhysiotherapistNavigator';
 import { AdminNavigator } from './AdminNavigator';
 
 // Mirrors apps/web's RootLayout: block all rendering until the session
@@ -30,6 +32,10 @@ export function RootNavigator() {
       return <AdminNavigator />;
     case 'DOCTOR':
       return <DoctorNavigator />;
+    case 'NURSE':
+      return <NurseNavigator />;
+    case 'PHYSIOTHERAPIST':
+      return <PhysiotherapistNavigator />;
     default:
       return <PatientNavigator />;
   }

@@ -5,15 +5,26 @@ import { RootLayout } from './RootLayout';
 import { LoginPage } from './auth/LoginPage';
 import { SignupPage } from './auth/SignupPage';
 import { PatientLayout } from './patient/PatientLayout';
+import { BookServicePage } from './patient/BookServicePage';
 import { RequestVisitPage } from './patient/RequestVisitPage';
+import { RequestNursingPage } from './patient/RequestNursingPage';
+import { RequestPhysiotherapyPage } from './patient/RequestPhysiotherapyPage';
 import { MyVisitsPage } from './patient/MyVisitsPage';
 import { PatientSettingsPage } from './patient/PatientSettingsPage';
 import { DoctorLayout } from './doctor/DoctorLayout';
 import { AssignedVisitsPage } from './doctor/AssignedVisitsPage';
 import { DoctorSettingsPage } from './doctor/DoctorSettingsPage';
+import { NurseLayout } from './nurse/NurseLayout';
+import { AssignedVisitsPage as NurseAssignedVisitsPage } from './nurse/AssignedVisitsPage';
+import { NurseSettingsPage } from './nurse/NurseSettingsPage';
+import { PhysiotherapistLayout } from './physiotherapist/PhysiotherapistLayout';
+import { AssignedVisitsPage as PhysiotherapistAssignedVisitsPage } from './physiotherapist/AssignedVisitsPage';
+import { PhysiotherapistSettingsPage } from './physiotherapist/PhysiotherapistSettingsPage';
 import { AdminLayout } from './admin/AdminLayout';
 import { AllVisitsPage } from './admin/AllVisitsPage';
 import { DoctorApplicationsPage } from './admin/DoctorApplicationsPage';
+import { NursesDirectoryPage } from './admin/NursesDirectoryPage';
+import { PhysiotherapistsDirectoryPage } from './admin/PhysiotherapistsDirectoryPage';
 import { SafetyDashboardPage } from './admin/SafetyDashboardPage';
 import { AdminSettingsPage } from './admin/AdminSettingsPage';
 import { TermsPage } from './legal/TermsPage';
@@ -35,7 +46,10 @@ export const router = createBrowserRouter([
             element: <PatientLayout />,
             children: [
               { index: true, element: <Navigate to="visits" replace /> },
+              { path: 'book', element: <BookServicePage /> },
               { path: 'request', element: <RequestVisitPage /> },
+              { path: 'request-nursing', element: <RequestNursingPage /> },
+              { path: 'request-physiotherapy', element: <RequestPhysiotherapyPage /> },
               { path: 'visits', element: <MyVisitsPage /> },
               { path: 'settings', element: <PatientSettingsPage /> },
             ],
@@ -57,6 +71,34 @@ export const router = createBrowserRouter([
         ],
       },
       {
+        element: <ProtectedRoute allow={[Role.NURSE]} />,
+        children: [
+          {
+            path: '/nurse',
+            element: <NurseLayout />,
+            children: [
+              { index: true, element: <Navigate to="visits" replace /> },
+              { path: 'visits', element: <NurseAssignedVisitsPage /> },
+              { path: 'settings', element: <NurseSettingsPage /> },
+            ],
+          },
+        ],
+      },
+      {
+        element: <ProtectedRoute allow={[Role.PHYSIOTHERAPIST]} />,
+        children: [
+          {
+            path: '/physio',
+            element: <PhysiotherapistLayout />,
+            children: [
+              { index: true, element: <Navigate to="visits" replace /> },
+              { path: 'visits', element: <PhysiotherapistAssignedVisitsPage /> },
+              { path: 'settings', element: <PhysiotherapistSettingsPage /> },
+            ],
+          },
+        ],
+      },
+      {
         element: <ProtectedRoute allow={[Role.ADMIN]} />,
         children: [
           {
@@ -66,6 +108,8 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to="visits" replace /> },
               { path: 'visits', element: <AllVisitsPage /> },
               { path: 'doctors', element: <DoctorApplicationsPage /> },
+              { path: 'nurses', element: <NursesDirectoryPage /> },
+              { path: 'physiotherapists', element: <PhysiotherapistsDirectoryPage /> },
               { path: 'safety', element: <SafetyDashboardPage /> },
               { path: 'settings', element: <AdminSettingsPage /> },
             ],

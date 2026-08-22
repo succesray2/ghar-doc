@@ -2,6 +2,8 @@ export const Role = {
   PATIENT: 'PATIENT',
   DOCTOR: 'DOCTOR',
   ADMIN: 'ADMIN',
+  NURSE: 'NURSE',
+  PHYSIOTHERAPIST: 'PHYSIOTHERAPIST',
 } as const;
 export type Role = (typeof Role)[keyof typeof Role];
 
@@ -33,6 +35,28 @@ export const DoctorStatus = {
   SUSPENDED: 'SUSPENDED',
 } as const;
 export type DoctorStatus = (typeof DoctorStatus)[keyof typeof DoctorStatus];
+
+// Nurse/Physiotherapist accounts are admin-created only (no public
+// self-serve signup) — account creation is itself the vetting decision, so
+// unlike DoctorStatus there is no PENDING/REJECTED state.
+export const NurseStatus = {
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED',
+} as const;
+export type NurseStatus = (typeof NurseStatus)[keyof typeof NurseStatus];
+
+export const PhysiotherapistStatus = {
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED',
+} as const;
+export type PhysiotherapistStatus = (typeof PhysiotherapistStatus)[keyof typeof PhysiotherapistStatus];
+
+export const ServiceType = {
+  DOCTOR_VISIT: 'DOCTOR_VISIT',
+  NURSING: 'NURSING',
+  PHYSIOTHERAPY: 'PHYSIOTHERAPY',
+} as const;
+export type ServiceType = (typeof ServiceType)[keyof typeof ServiceType];
 
 export const PaymentStatus = {
   CREATED: 'CREATED',

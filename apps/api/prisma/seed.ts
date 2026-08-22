@@ -1,4 +1,4 @@
-import { PrismaClient, Role, DoctorStatus } from '@prisma/client';
+import { PrismaClient, Role, DoctorStatus, NurseStatus, PhysiotherapistStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -63,6 +63,50 @@ async function main() {
     },
   });
 
+  const nurse = await prisma.user.upsert({
+    where: { email: 'nurse@ghardoc.com' },
+    update: {},
+    create: {
+      email: 'nurse@ghardoc.com',
+      passwordHash,
+      role: Role.NURSE,
+      firstName: 'Meera',
+      lastName: 'Iyer',
+      nurseProfile: {
+        create: {
+          licenseNumber: 'NUR-000789',
+          qualification: 'B.Sc Nursing',
+          bio: 'Home nursing care — wound care, injections, IV drips.',
+          yearsExperience: 6,
+          status: NurseStatus.ACTIVE,
+          reviewedAt: new Date(),
+        },
+      },
+    },
+  });
+
+  const physiotherapist = await prisma.user.upsert({
+    where: { email: 'physio@ghardoc.com' },
+    update: {},
+    create: {
+      email: 'physio@ghardoc.com',
+      passwordHash,
+      role: Role.PHYSIOTHERAPIST,
+      firstName: 'Karan',
+      lastName: 'Rao',
+      physiotherapistProfile: {
+        create: {
+          licenseNumber: 'PHT-000321',
+          specialty: 'Orthopedic Rehabilitation',
+          bio: 'Post-injury recovery and rehabilitation planning.',
+          yearsExperience: 5,
+          status: PhysiotherapistStatus.ACTIVE,
+          reviewedAt: new Date(),
+        },
+      },
+    },
+  });
+
   const patient = await prisma.user.upsert({
     where: { email: 'patient@ghardoc.com' },
     update: {},
@@ -84,10 +128,12 @@ async function main() {
   });
 
   console.log('Seeded accounts (all share the same password):');
-  console.log(`  Admin:           ${admin.email}`);
-  console.log(`  Doctor (approved): ${doctor.email}`);
-  console.log(`  Doctor (pending):  ${pendingDoctor.email}`);
-  console.log(`  Patient:         ${patient.email}`);
+  console.log(`  Admin:              ${admin.email}`);
+  console.log(`  Doctor (approved):  ${doctor.email}`);
+  console.log(`  Doctor (pending):   ${pendingDoctor.email}`);
+  console.log(`  Nurse (active):     ${nurse.email}`);
+  console.log(`  Physiotherapist:    ${physiotherapist.email}`);
+  console.log(`  Patient:            ${patient.email}`);
   console.log(`  Password: ${SEED_PASSWORD}`);
 }
 

@@ -34,8 +34,8 @@ interface Props {
 
 export function SettingsScreen({ navigation }: Props) {
   const user = useAuthStore((s) => s.user);
-  const showNotificationPrefs = user?.role === 'PATIENT' || user?.role === 'DOCTOR';
-  const showLegalSupport = user?.role === 'DOCTOR' || user?.role === 'ADMIN';
+  const showNotificationPrefs = user?.role === 'PATIENT' || user?.role === 'DOCTOR' || user?.role === 'NURSE' || user?.role === 'PHYSIOTHERAPIST';
+  const showLegalSupport = user?.role === 'DOCTOR' || user?.role === 'ADMIN' || user?.role === 'NURSE' || user?.role === 'PHYSIOTHERAPIST';
 
   return (
     <ScrollView style={styles.flex} contentContainerStyle={styles.scroll}>

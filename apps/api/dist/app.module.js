@@ -16,7 +16,11 @@ const prisma_module_1 = require("./prisma/prisma.module");
 const auth_module_1 = require("./auth/auth.module");
 const users_module_1 = require("./users/users.module");
 const doctors_module_1 = require("./doctors/doctors.module");
+const nurses_module_1 = require("./nurses/nurses.module");
+const physiotherapists_module_1 = require("./physiotherapists/physiotherapists.module");
 const visits_module_1 = require("./visits/visits.module");
+const notifications_module_1 = require("./notifications/notifications.module");
+const family_members_module_1 = require("./family-members/family-members.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -32,7 +36,11 @@ exports.AppModule = AppModule = __decorate([
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             doctors_module_1.DoctorsModule,
+            nurses_module_1.NursesModule,
+            physiotherapists_module_1.PhysiotherapistsModule,
             visits_module_1.VisitsModule,
+            notifications_module_1.NotificationsModule,
+            family_members_module_1.FamilyMembersModule,
         ],
         providers: [{ provide: core_1.APP_GUARD, useClass: throttler_1.ThrottlerGuard }],
     })

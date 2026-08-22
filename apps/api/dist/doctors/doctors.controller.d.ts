@@ -20,13 +20,13 @@ export declare class DoctorsController {
     statusHistory(id: string): Promise<{
         id: string;
         createdAt: Date;
+        userAgent: string | null;
         doctorProfileId: string;
         fromStatus: import("@prisma/client").$Enums.DoctorStatus | null;
         toStatus: import("@prisma/client").$Enums.DoctorStatus;
         reason: string | null;
         changedById: string;
         ipAddress: string | null;
-        userAgent: string | null;
     }[]>;
     updateStatus(id: string, body: UpdateDoctorStatusInput, admin: AuthenticatedUser, req: Request): Promise<{
         status: import("@prisma/client").$Enums.DoctorStatus;

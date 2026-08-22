@@ -11,6 +11,8 @@ enum Role {
   PATIENT
   DOCTOR
   ADMIN
+  NURSE
+  PHYSIOTHERAPIST
 }
 
 enum VisitStatus {
@@ -63,6 +65,25 @@ enum DoctorStatus {
   SUSPENDED
 }
 
+// Nurse/Physiotherapist accounts are admin-created only (no public
+// self-serve signup), so unlike DoctorStatus there is no PENDING/REJECTED
+// state — admin creating the account already is the vetting decision.
+enum NurseStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum PhysiotherapistStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum ServiceType {
+  DOCTOR_VISIT
+  NURSING
+  PHYSIOTHERAPY
+}
+
 enum TriagePriority {
   GREEN
   ORANGE
@@ -95,16 +116,22 @@ model User {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
-  patientProfile         PatientProfile?
-  doctorProfile          DoctorProfile?
-  refreshTokens          RefreshToken[]
-  visitsAsPatient        Visit[]                 @relation("PatientVisits")
-  visitsAsDoctor         Visit[]                 @relation("DoctorVisits")
-  visitStatusEvents      VisitStatusEvent[]
-  doctorStatusEvents     DoctorStatusEvent[]
-  familyMembers          FamilyMember[]
-  notifications          Notification[]
-  notificationPreference NotificationPreference?
+  patientProfile              PatientProfile?
+  doctorProfile               DoctorProfile?
+  nurseProfile                NurseProfile?
+  physiotherapistProfile      PhysiotherapistProfile?
+  refreshTokens               RefreshToken[]
+  visitsAsPatient             Visit[]                      @relation("PatientVisits")
+  visitsAsDoctor              Visit[]                      @relation("DoctorVisits")
+  visitsAsNurse               Visit[]                      @relation("NurseVisits")
+  visitsAsPhysiotherapist     Visit[]                      @relation("PhysiotherapistVisits")
+  visitStatusEvents           VisitStatusEvent[]
+  doctorStatusEvents          DoctorStatusEvent[]
+  nurseStatusEvents           NurseStatusEvent[]           @relation("NurseStatusEventsChangedBy")
+  physiotherapistStatusEvents PhysiotherapistStatusEvent[] @relation("PhysiotherapistStatusEventsChangedBy")
+  familyMembers               FamilyMember[]
+  notifications               Notification[]
+  notificationPreference      NotificationPreference?
 }
 
 model PatientProfile {
@@ -159,12 +186,82 @@ model DoctorStatusEvent {
   createdAt       DateTime      @default(now())
 }
 
+// Admin-created only — no public signup. status defaults ACTIVE since
+// account creation IS the vetting decision (no PENDING/REJECTED state).
+model NurseProfile {
+  id              String      @id @default(cuid())
+  userId          String      @unique
+  user            User        @relation(fields: [userId], references: [id])
+  licenseNumber   String
+  qualification   String
+  bio             String?
+  yearsExperience Int?
+  status          NurseStatus @default(ACTIVE)
+  statusReason    String?
+  reviewedAt      DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  statusEvents NurseStatusEvent[]
+}
+
+model NurseStatusEvent {
+  id             String       @id @default(cuid())
+  nurseProfileId String
+  nurseProfile   NurseProfile @relation(fields: [nurseProfileId], references: [id])
+  fromStatus     NurseStatus?
+  toStatus       NurseStatus
+  reason         String?
+  changedById    String
+  changedBy      User         @relation("NurseStatusEventsChangedBy", fields: [changedById], references: [id])
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime     @default(now())
+}
+
+model PhysiotherapistProfile {
+  id              String                @id @default(cuid())
+  userId          String                @unique
+  user            User                  @relation(fields: [userId], references: [id])
+  licenseNumber   String
+  specialty       String
+  bio             String?
+  yearsExperience Int?
+  status          PhysiotherapistStatus @default(ACTIVE)
+  statusReason    String?
+  reviewedAt      DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  statusEvents PhysiotherapistStatusEvent[]
+}
+
+model PhysiotherapistStatusEvent {
+  id                       String                 @id @default(cuid())
+  physiotherapistProfileId String
+  physiotherapistProfile   PhysiotherapistProfile @relation(fields: [physiotherapistProfileId], references: [id])
+  fromStatus               PhysiotherapistStatus?
+  toStatus                 PhysiotherapistStatus
+  reason                   String?
+  changedById              String
+  changedBy                User                   @relation("PhysiotherapistStatusEventsChangedBy", fields: [changedById], references: [id])
+  ipAddress                String?
+  userAgent                String?
+  createdAt                DateTime               @default(now())
+}
+
 model Visit {
   id                 String             @id @default(cuid())
   patientId          String
   patient            User               @relation("PatientVisits", fields: [patientId], references: [id])
   doctorId           String?
   doctor             User?              @relation("DoctorVisits", fields: [doctorId], references: [id])
+  nurseId            String?
+  nurse              User?              @relation("NurseVisits", fields: [nurseId], references: [id])
+  physiotherapistId  String?
+  physiotherapist    User?              @relation("PhysiotherapistVisits", fields: [physiotherapistId], references: [id])
+  serviceType        ServiceType        @default(DOCTOR_VISIT)
+  serviceDetails     Json?
   status             VisitStatus        @default(REQUESTED)
   paymentStatus      VisitPaymentStatus @default(UNPAID)
   priority           TriagePriority     @default(GREEN)
@@ -196,11 +293,14 @@ model Visit {
   updatedAt          DateTime           @updatedAt
   statusEvents       VisitStatusEvent[]
   triage             VisitTriage?
+  safetyCheck        VisitSafetyCheck?
   notifications      Notification[]
 
   @@index([status])
   @@index([patientId])
   @@index([doctorId])
+  @@index([nurseId])
+  @@index([physiotherapistId])
   @@index([priority])
 }
 
@@ -218,6 +318,19 @@ model VisitTriage {
   matchedRedFlags     Json?
   redFlagAcknowledged Boolean        @default(false)
   createdAt           DateTime       @default(now())
+}
+
+// Permanent audit record for Nursing/Physiotherapy bookings' lightweight
+// safety-net check (NOT the full doctor triage engine). The check hard-blocks
+// on any red flag with no acknowledge-and-proceed path, so a row existing at
+// all means the check passed — there is no `triggered` column to store.
+model VisitSafetyCheck {
+  id          String   @id @default(cuid())
+  visitId     String   @unique
+  visit       Visit    @relation(fields: [visitId], references: [id])
+  ruleVersion Int
+  answers     Json
+  createdAt   DateTime @default(now())
 }
 
 // Audit trail of every status change. Powers the admin activity view today

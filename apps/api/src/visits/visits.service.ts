@@ -2,15 +2,21 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import type { Prisma } from '@prisma/client';
 import {
   DoctorStatus,
+  NurseStatus,
+  PhysiotherapistStatus,
   NotificationCategory,
   Role,
   VisitStatus,
+  ServiceType,
   TriagePriority,
   TRIAGE_RULE_VERSION,
   TRIAGE_MESSAGES,
+  SAFETY_NET_RULE_VERSION,
   classifyTriage,
+  evaluateSafetyNet,
   type CreateVisitInput,
   type TriageAnswersInput,
+  type SafetyNetAnswers,
   type SafetyStatsDto,
 } from '@ghar-doc/shared';
 import { PrismaService } from '../prisma/prisma.service';
@@ -25,13 +31,27 @@ function bookingRef(visitId: string): string {
   return visitId.slice(-6).toUpperCase();
 }
 
+const SAFETY_NET_BLOCK_MESSAGE =
+  'This sounds like it may need urgent medical attention. Please request a doctor visit instead of a routine booking.';
+
 const VISIT_INCLUDE = {
   patient: { select: { id: true, firstName: true, lastName: true, phone: true } },
   doctor: { select: { id: true, firstName: true, lastName: true, phone: true } },
+  nurse: { select: { id: true, firstName: true, lastName: true, phone: true } },
+  physiotherapist: { select: { id: true, firstName: true, lastName: true, phone: true } },
   triage: true,
+  safetyCheck: true,
 } as const;
 
-type VisitRow = { id: string; status: string; patientId: string; doctorId: string | null };
+type VisitRow = {
+  id: string;
+  status: string;
+  serviceType: string;
+  patientId: string;
+  doctorId: string | null;
+  nurseId: string | null;
+  physiotherapistId: string | null;
+};
 
 @Injectable()
 export class VisitsService {
@@ -49,35 +69,104 @@ export class VisitsService {
     return classifyTriage(answers);
   }
 
+  /** Same pattern as previewTriage(), for the Nursing/Physiotherapy
+   *  wizards' lightweight safety-net check — the server always recomputes
+   *  authoritatively in create() regardless of what this returns. */
+  previewSafetyNet(answers: SafetyNetAnswers) {
+    return evaluateSafetyNet(answers);
+  }
+
   async create(patientId: string, input: CreateVisitInput) {
-    const { triageAnswers, redFlagAcknowledged, ...visitFields } = input;
-    const classification = classifyTriage(triageAnswers);
+    const {
+      serviceType,
+      triageAnswers,
+      redFlagAcknowledged,
+      nursingDetails,
+      physiotherapyDetails,
+      safetyCheckAnswers,
+      ...commonFields
+    } = input;
 
-    if (classification.priority === TriagePriority.RED && !redFlagAcknowledged) {
-      throw new BadRequestException({
-        message: TRIAGE_MESSAGES.RED,
-        priority: classification.priority,
-        matchedRedFlags: classification.matchedRedFlags,
-      });
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let visit: any;
 
-    const visit = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.visit.create({
-        data: { patientId, ...visitFields, priority: classification.priority },
-        include: VISIT_INCLUDE,
+    if (serviceType === ServiceType.NURSING || serviceType === ServiceType.PHYSIOTHERAPY) {
+      // Lightweight universal red-flag check — NOT the doctor triage engine.
+      // Hard-blocks with no acknowledge-and-proceed path: a triggered check
+      // never reaches the database, so a persisted VisitSafetyCheck row
+      // always means the check passed.
+      const { triggered } = evaluateSafetyNet(safetyCheckAnswers as SafetyNetAnswers);
+      if (triggered) {
+        throw new BadRequestException({ message: SAFETY_NET_BLOCK_MESSAGE, triggered: true });
+      }
+
+      const serviceDetails = serviceType === ServiceType.NURSING ? nursingDetails : physiotherapyDetails;
+
+      visit = await this.prisma.$transaction(async (tx) => {
+        const created = await tx.visit.create({
+          data: {
+            patientId,
+            ...commonFields,
+            serviceType,
+            serviceDetails: serviceDetails as unknown as Prisma.InputJsonValue,
+            priority: TriagePriority.GREEN,
+          },
+          include: VISIT_INCLUDE,
+        });
+        await tx.visitSafetyCheck.create({
+          data: {
+            visitId: created.id,
+            ruleVersion: SAFETY_NET_RULE_VERSION,
+            answers: safetyCheckAnswers as unknown as Prisma.InputJsonValue,
+          },
+        });
+        return created;
       });
-      await tx.visitTriage.create({
-        data: {
+    } else {
+      const classification = classifyTriage(triageAnswers as TriageAnswersInput);
+
+      if (classification.priority === TriagePriority.RED && !redFlagAcknowledged) {
+        throw new BadRequestException({
+          message: TRIAGE_MESSAGES.RED,
+          priority: classification.priority,
+          matchedRedFlags: classification.matchedRedFlags,
+        });
+      }
+
+      const created = await this.prisma.$transaction(async (tx) => {
+        const v = await tx.visit.create({
+          data: { patientId, ...commonFields, serviceType, priority: classification.priority },
+          include: VISIT_INCLUDE,
+        });
+        await tx.visitTriage.create({
+          data: {
+            visitId: v.id,
+            ruleVersion: TRIAGE_RULE_VERSION,
+            answers: triageAnswers as unknown as Prisma.InputJsonValue,
+            priority: classification.priority,
+            matchedRedFlags: classification.matchedRedFlags as unknown as Prisma.InputJsonValue,
+            redFlagAcknowledged: classification.priority === TriagePriority.RED ? redFlagAcknowledged : false,
+          },
+        });
+        return v;
+      });
+      // The include above resolved before visitTriage existed, so `created`
+      // has triage: null — reconstruct it from what we already know instead
+      // of a second round-trip.
+      visit = {
+        ...created,
+        triage: {
+          id: '',
           visitId: created.id,
           ruleVersion: TRIAGE_RULE_VERSION,
-          answers: triageAnswers as unknown as Prisma.InputJsonValue,
           priority: classification.priority,
-          matchedRedFlags: classification.matchedRedFlags as unknown as Prisma.InputJsonValue,
+          matchedRedFlags: classification.matchedRedFlags,
+          answers: triageAnswers,
           redFlagAcknowledged: classification.priority === TriagePriority.RED ? redFlagAcknowledged : false,
+          createdAt: created.createdAt,
         },
-      });
-      return created;
-    });
+      };
+    }
 
     await this.notifications.notify(
       patientId,
@@ -87,15 +176,12 @@ export class VisitsService {
       visit.id,
     );
 
-    return this.mapVisit({
-      ...visit,
-      triage: { priority: classification.priority, matchedRedFlags: classification.matchedRedFlags, answers: triageAnswers },
-    });
+    return this.mapVisit(visit);
   }
 
-  async findAll(status?: VisitStatus) {
+  async findAll(status?: VisitStatus, serviceType?: ServiceType) {
     const visits = await this.prisma.visit.findMany({
-      where: status ? { status } : undefined,
+      where: { ...(status ? { status } : {}), ...(serviceType ? { serviceType } : {}) },
       include: VISIT_INCLUDE,
       orderBy: { requestedAt: 'desc' },
     });
@@ -111,9 +197,15 @@ export class VisitsService {
     return visits.map((v) => this.mapVisit(v));
   }
 
-  async findAssigned(doctorId: string) {
+  async findAssigned(actor: AuthenticatedUser) {
+    const where =
+      actor.role === Role.NURSE
+        ? { nurseId: actor.id }
+        : actor.role === Role.PHYSIOTHERAPIST
+          ? { physiotherapistId: actor.id }
+          : { doctorId: actor.id };
     const visits = await this.prisma.visit.findMany({
-      where: { doctorId },
+      where,
       include: VISIT_INCLUDE,
       orderBy: { requestedAt: 'desc' },
     });
@@ -127,17 +219,35 @@ export class VisitsService {
     return this.mapVisit(visit);
   }
 
-  async assign(id: string, doctorId: string, actor: AuthenticatedUser, ctx?: RequestContext) {
+  async assign(id: string, providerId: string, actor: AuthenticatedUser, ctx?: RequestContext) {
     const visit = await this.getOrThrow(id);
     if (!isTransitionAllowed(visit.status as VisitStatus, VisitStatus.ASSIGNED, actor.role)) {
       throw new BadRequestException(`Cannot assign a visit in status ${visit.status}`);
     }
-    const doctorProfile = await this.prisma.doctorProfile.findUnique({ where: { userId: doctorId } });
-    if (!doctorProfile || doctorProfile.status !== DoctorStatus.APPROVED) {
-      throw new BadRequestException('Doctor is not approved for assignment');
+
+    let extraData: Record<string, unknown>;
+    if (visit.serviceType === ServiceType.NURSING) {
+      const profile = await this.prisma.nurseProfile.findUnique({ where: { userId: providerId } });
+      if (!profile || profile.status !== NurseStatus.ACTIVE) {
+        throw new BadRequestException('Nurse is not active for assignment');
+      }
+      extraData = { nurseId: providerId };
+    } else if (visit.serviceType === ServiceType.PHYSIOTHERAPY) {
+      const profile = await this.prisma.physiotherapistProfile.findUnique({ where: { userId: providerId } });
+      if (!profile || profile.status !== PhysiotherapistStatus.ACTIVE) {
+        throw new BadRequestException('Physiotherapist is not active for assignment');
+      }
+      extraData = { physiotherapistId: providerId };
+    } else {
+      const doctorProfile = await this.prisma.doctorProfile.findUnique({ where: { userId: providerId } });
+      if (!doctorProfile || doctorProfile.status !== DoctorStatus.APPROVED) {
+        throw new BadRequestException('Doctor is not approved for assignment');
+      }
+      extraData = { doctorId: providerId };
     }
-    this.logger.log(`Visit ${visit.id} assigned to doctor ${doctorId} by admin ${actor.id}`);
-    const updated = await this.transition(visit, VisitStatus.ASSIGNED, actor, { doctorId }, ctx);
+
+    this.logger.log(`Visit ${visit.id} (${visit.serviceType}) assigned to ${providerId} by admin ${actor.id}`);
+    const updated = await this.transition(visit, VisitStatus.ASSIGNED, actor, extraData, ctx);
 
     const ref = bookingRef(visit.id);
     await this.notifications.notify(
@@ -148,7 +258,7 @@ export class VisitsService {
       visit.id,
     );
     await this.notifications.notify(
-      doctorId,
+      providerId,
       NotificationCategory.PROVIDER_ASSIGNMENT,
       'New visit request',
       `You have a new visit request. Booking ID: ${ref}.`,
@@ -163,6 +273,12 @@ export class VisitsService {
     if (actor.role === Role.DOCTOR && visit.doctorId !== actor.id) {
       throw new ForbiddenException('You are not assigned to this visit');
     }
+    if (actor.role === Role.NURSE && visit.nurseId !== actor.id) {
+      throw new ForbiddenException('You are not assigned to this visit');
+    }
+    if (actor.role === Role.PHYSIOTHERAPIST && visit.physiotherapistId !== actor.id) {
+      throw new ForbiddenException('You are not assigned to this visit');
+    }
     if (!isTransitionAllowed(visit.status as VisitStatus, status, actor.role)) {
       throw new BadRequestException(`Cannot move visit from ${visit.status} to ${status}`);
     }
@@ -173,11 +289,18 @@ export class VisitsService {
       // Chained, atomic: ASSIGNED->PROVIDER_DECLINED->REQUESTED in the same
       // transaction, so no reader ever observes a visit resting in
       // PROVIDER_DECLINED and a mid-flight crash can't strand it there.
+      // Clears whichever provider FK this visit's serviceType actually set.
+      const clearField =
+        visit.serviceType === ServiceType.NURSING
+          ? 'nurseId'
+          : visit.serviceType === ServiceType.PHYSIOTHERAPY
+            ? 'physiotherapistId'
+            : 'doctorId';
       const updated = await this.chainedTransition(
         visit,
         [
           { toStatus: VisitStatus.PROVIDER_DECLINED, extraData: {} },
-          { toStatus: VisitStatus.REQUESTED, extraData: { doctorId: null } },
+          { toStatus: VisitStatus.REQUESTED, extraData: { [clearField]: null } },
         ],
         actor,
         ctx,
@@ -235,10 +358,19 @@ export class VisitsService {
   }
 
   async safetyStats(): Promise<SafetyStatsDto> {
+    // Nursing/Physiotherapy visits never go through the doctor triage
+    // engine and are always GREEN — scoping to DOCTOR_VISIT keeps this
+    // dashboard meaning exactly what it meant before this phase, instead of
+    // having every other-service visit silently dilute the RED/ORANGE mix.
+    const DOCTOR_VISIT_ONLY = { serviceType: ServiceType.DOCTOR_VISIT } as const;
     const [byPriorityRaw, unassignedRaw, cancelled] = await Promise.all([
-      this.prisma.visit.groupBy({ by: ['priority'], _count: { _all: true } }),
-      this.prisma.visit.groupBy({ by: ['priority'], where: { status: VisitStatus.REQUESTED }, _count: { _all: true } }),
-      this.prisma.visit.count({ where: { status: VisitStatus.CANCELLED } }),
+      this.prisma.visit.groupBy({ by: ['priority'], where: DOCTOR_VISIT_ONLY, _count: { _all: true } }),
+      this.prisma.visit.groupBy({
+        by: ['priority'],
+        where: { ...DOCTOR_VISIT_ONLY, status: VisitStatus.REQUESTED },
+        _count: { _all: true },
+      }),
+      this.prisma.visit.count({ where: { ...DOCTOR_VISIT_ONLY, status: VisitStatus.CANCELLED } }),
     ]);
 
     const byPriority: Record<TriagePriority, number> = { GREEN: 0, ORANGE: 0, RED: 0 };
@@ -326,19 +458,26 @@ export class VisitsService {
     return visit;
   }
 
-  private assertCanView(visit: { patientId: string; doctorId: string | null }, user: AuthenticatedUser) {
+  private assertCanView(
+    visit: { patientId: string; doctorId: string | null; nurseId: string | null; physiotherapistId: string | null },
+    user: AuthenticatedUser,
+  ) {
     if (user.role === Role.ADMIN) return;
     if (user.role === Role.PATIENT && visit.patientId === user.id) return;
     if (user.role === Role.DOCTOR && visit.doctorId === user.id) return;
+    if (user.role === Role.NURSE && visit.nurseId === user.id) return;
+    if (user.role === Role.PHYSIOTHERAPIST && visit.physiotherapistId === user.id) return;
     throw new ForbiddenException('You do not have access to this visit');
   }
 
   /** Shapes the doctor/admin/patient-facing triage view — the derived
    *  summary (priority, matched red flags, which symptoms were selected),
-   *  never the full raw associated-sign answer blob. */
+   *  never the full raw associated-sign answer blob. The raw safetyCheck
+   *  row is dropped entirely — its mere existence already means "passed",
+   *  there's nothing to summarize. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private mapVisit(visit: any) {
-    const { triage, ...rest } = visit;
+    const { triage, safetyCheck: _safetyCheck, ...rest } = visit;
     if (!triage) {
       return { ...rest, triageSummary: null };
     }

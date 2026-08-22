@@ -6,7 +6,7 @@ export function PatientLayout() {
       roleLabel="Patient"
       navItems={[
         { to: '/patient/visits', label: 'My Visits' },
-        { to: '/patient/request', label: 'Request a Visit' },
+        { to: '/patient/book', label: 'Book a Service' },
         { to: '/patient/settings', label: 'Settings' },
       ]}
     />

@@ -1,5 +1,6 @@
-import type { Role, VisitStatus, VisitPaymentStatus, DoctorStatus, PaymentStatus, TriagePriority, BookingRelation, NotificationCategory, FamilyRelation } from './enums';
+import type { Role, VisitStatus, VisitPaymentStatus, DoctorStatus, NurseStatus, PhysiotherapistStatus, PaymentStatus, TriagePriority, BookingRelation, NotificationCategory, FamilyRelation, ServiceType } from './enums';
 import type { MatchedRedFlag } from './triage-rules';
+import type { NursingServiceDetails, PhysiotherapyServiceDetails } from './service-intake';
 export interface UserDto {
     id: string;
     email: string;
@@ -16,6 +17,8 @@ export interface TriageSummaryDto {
 }
 export interface VisitDto {
     id: string;
+    serviceType: ServiceType;
+    serviceDetails: NursingServiceDetails | PhysiotherapyServiceDetails | null;
     status: VisitStatus;
     paymentStatus: VisitPaymentStatus;
     priority: TriagePriority;
@@ -34,6 +37,8 @@ export interface VisitDto {
     postalCode: string;
     patient: VisitPartyDto;
     doctor: VisitPartyDto | null;
+    nurse: VisitPartyDto | null;
+    physiotherapist: VisitPartyDto | null;
     triageSummary: TriageSummaryDto | null;
     requestedAt: string;
     assignedAt: string | null;
@@ -66,6 +71,44 @@ export interface DoctorStatusEventDto {
     id: string;
     fromStatus: DoctorStatus | null;
     toStatus: DoctorStatus;
+    reason: string | null;
+    changedById: string;
+    createdAt: string;
+}
+export interface NurseListItemDto {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    qualification: string;
+    licenseNumber: string;
+    yearsExperience: number | null;
+    status: NurseStatus;
+    statusReason: string | null;
+}
+export interface NurseStatusEventDto {
+    id: string;
+    fromStatus: NurseStatus | null;
+    toStatus: NurseStatus;
+    reason: string | null;
+    changedById: string;
+    createdAt: string;
+}
+export interface PhysiotherapistListItemDto {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    specialty: string;
+    licenseNumber: string;
+    yearsExperience: number | null;
+    status: PhysiotherapistStatus;
+    statusReason: string | null;
+}
+export interface PhysiotherapistStatusEventDto {
+    id: string;
+    fromStatus: PhysiotherapistStatus | null;
+    toStatus: PhysiotherapistStatus;
     reason: string | null;
     changedById: string;
     createdAt: string;

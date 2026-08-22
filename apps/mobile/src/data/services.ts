@@ -8,10 +8,12 @@ export interface ServiceItem {
 }
 
 // Same real service list as apps/marketing/src/data/services.ts — kept in
-// sync deliberately, not invented separately. The booking flow itself is
-// still one generic "describe your problem" request regardless of which
-// service is tapped (the API has no per-service intake yet), so every tile
-// below routes to the same RequestVisit screen with a relevant starting hint.
+// sync deliberately, not invented separately. Nursing and Physiotherapy now
+// have their own real, structured booking flows (RequestNursing/
+// RequestPhysiotherapy) with a real safety-net check and admin assignment
+// to an actual verified nurse/physiotherapist account — not a cosmetic
+// text-hint into the generic doctor wizard anymore. Doctor visits, Home
+// Records, and the other tiles still route to their existing real screens.
 export const services: ServiceItem[] = [
   {
     slug: 'doctor-visits',

@@ -132,6 +132,7 @@ export function RequestVisitScreen({ navigation, route }: Props) {
       [...state.selectedSymptomIds.map(symptomLabel), state.otherSymptomText].filter(Boolean).join(', ') || 'Home visit request';
 
     const payload: CreateVisitInput = {
+      serviceType: 'DOCTOR_VISIT',
       reasonForVisit,
       notes: state.notes || undefined,
       addressLine1: state.addressLine1,

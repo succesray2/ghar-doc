@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StyleShe
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { VisitDto, VisitStatus } from '@ghar-doc/shared';
+import type { ServiceType, VisitDto, VisitStatus } from '@ghar-doc/shared';
 import { useAllVisits, useUpdateVisitStatus } from '../../hooks/useVisits';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
@@ -28,6 +28,13 @@ const STATUS_FILTERS: { label: string; value: VisitStatus | undefined }[] = [
   { label: 'No provider available', value: 'NO_PROVIDER_AVAILABLE' },
 ];
 
+const SERVICE_TYPE_FILTERS: { label: string; value: ServiceType | undefined }[] = [
+  { label: 'All services', value: undefined },
+  { label: 'Doctor', value: 'DOCTOR_VISIT' },
+  { label: 'Nursing', value: 'NURSING' },
+  { label: 'Physiotherapy', value: 'PHYSIOTHERAPY' },
+];
+
 type Props = CompositeScreenProps<
   BottomTabScreenProps<AdminTabParamList, 'AllVisits'>,
   NativeStackScreenProps<AdminStackParamList>
@@ -35,7 +42,8 @@ type Props = CompositeScreenProps<
 
 export function AllVisitsScreen({ navigation }: Props) {
   const [status, setStatus] = useState<VisitStatus | undefined>(undefined);
-  const { data: visits, isLoading, isRefetching, refetch } = useAllVisits(status);
+  const [serviceType, setServiceType] = useState<ServiceType | undefined>(undefined);
+  const { data: visits, isLoading, isRefetching, refetch } = useAllVisits(status, serviceType);
   const updateStatus = useUpdateVisitStatus();
 
   const sortedVisits = useMemo(
@@ -45,6 +53,22 @@ export function AllVisitsScreen({ navigation }: Props) {
 
   return (
     <View style={styles.flex}>
+      <FlatList
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterRow}
+        contentContainerStyle={styles.filterRowContent}
+        data={SERVICE_TYPE_FILTERS}
+        keyExtractor={(f) => f.label}
+        renderItem={({ item: f }) => (
+          <Pressable
+            onPress={() => setServiceType(f.value)}
+            style={[styles.pill, styles.pillDark, serviceType === f.value && styles.pillDarkActive]}
+          >
+            <Text style={[styles.pillText, serviceType === f.value && styles.pillTextActive]}>{f.label}</Text>
+          </Pressable>
+        )}
+      />
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -76,7 +100,13 @@ export function AllVisitsScreen({ navigation }: Props) {
           renderItem={({ item: visit }) => (
             <VisitCard
               visit={visit}
-              onAssign={() => navigation.navigate('AssignDoctorModal', { visitId: visit.id, reasonForVisit: visit.reasonForVisit })}
+              onAssign={() =>
+                navigation.navigate('AssignProviderModal', {
+                  visitId: visit.id,
+                  reasonForVisit: visit.reasonForVisit,
+                  serviceType: visit.serviceType,
+                })
+              }
               onNoProviderAvailable={() =>
                 Alert.alert('Mark as unable to assign?', undefined, [
                   { text: 'Cancel', style: 'cancel' },
@@ -128,13 +158,21 @@ function VisitCard({
         {visit.bookingFor !== 'SELF' && visit.patientName ? ` (booking for ${visit.patientName})` : ''}
       </Text>
       {visit.doctor ? <Text style={styles.person}>Doctor: {visit.doctor.firstName} {visit.doctor.lastName}</Text> : null}
+      {visit.nurse ? <Text style={styles.person}>Nurse: {visit.nurse.firstName} {visit.nurse.lastName}</Text> : null}
+      {visit.physiotherapist ? (
+        <Text style={styles.person}>Physiotherapist: {visit.physiotherapist.firstName} {visit.physiotherapist.lastName}</Text>
+      ) : null}
       {visit.triageSummary && visit.triageSummary.matchedRedFlags.length > 0 ? (
         <Text style={styles.flagged}>Flagged: {visit.triageSummary.matchedRedFlags.map((f) => f.label).join('; ')}</Text>
       ) : null}
       {visit.status === 'REQUESTED' ? (
         <View style={styles.actions}>
           <View style={styles.actionButton}>
-            <Button title="Assign doctor" onPress={onAssign} disabled={busy} />
+            <Button
+              title={visit.serviceType === 'NURSING' ? 'Assign nurse' : visit.serviceType === 'PHYSIOTHERAPY' ? 'Assign physio' : 'Assign doctor'}
+              onPress={onAssign}
+              disabled={busy}
+            />
           </View>
           <View style={styles.actionButton}>
             <Button title="No provider available" variant="secondary" onPress={onNoProviderAvailable} disabled={busy} />
@@ -157,6 +195,8 @@ const styles = StyleSheet.create({
   filterRowContent: { paddingHorizontal: 16, gap: 8 },
   pill: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: colors.card, marginRight: 8 },
   pillActive: { backgroundColor: colors.brand600 },
+  pillDark: {},
+  pillDarkActive: { backgroundColor: colors.navy700 },
   pillText: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.textMuted },
   pillTextActive: { color: '#fff' },
   list: { padding: 16, flexGrow: 1 },

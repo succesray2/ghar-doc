@@ -4,24 +4,31 @@ exports.VISIT_TRANSITIONS = void 0;
 exports.getLegalTransitions = getLegalTransitions;
 exports.isTransitionAllowed = isTransitionAllowed;
 const enums_1 = require("./enums");
+const ANY_PROVIDER = [enums_1.Role.DOCTOR, enums_1.Role.NURSE, enums_1.Role.PHYSIOTHERAPIST];
 /**
  * Single source of truth for the visit lifecycle, shared by the API (which
  * enforces it) and the web app (which uses it to decide what buttons to show).
  *
  * PROVIDER_DECLINED->REQUESTED is deliberately NOT listed here — it's a
  * system-only auto-transition (the server chains it atomically onto the
- * decline write, clearing doctorId), never an actor-initiated PATCH. Listing
- * it with a real allowedRoles would wrongly imply a doctor can PATCH a visit
- * straight back to REQUESTED.
+ * decline write, clearing whichever provider FK was set), never an
+ * actor-initiated PATCH. Listing it with a real allowedRoles would wrongly
+ * imply a provider can PATCH a visit straight back to REQUESTED.
+ *
+ * allowedRoles here is a coarse "which roles can attempt this status value"
+ * filter, shared across Doctor/Nurse/Physiotherapist visits alike — the
+ * actual security boundary (can *this* provider act on *this* visit) is the
+ * ownership check in the API's VisitsService, keyed on the visit's own
+ * serviceType and matching provider FK.
  */
 exports.VISIT_TRANSITIONS = [
     { from: enums_1.VisitStatus.REQUESTED, to: enums_1.VisitStatus.ASSIGNED, allowedRoles: [enums_1.Role.ADMIN] },
-    { from: enums_1.VisitStatus.ASSIGNED, to: enums_1.VisitStatus.PROVIDER_ACCEPTED, allowedRoles: [enums_1.Role.DOCTOR] },
-    { from: enums_1.VisitStatus.ASSIGNED, to: enums_1.VisitStatus.PROVIDER_DECLINED, allowedRoles: [enums_1.Role.DOCTOR] },
-    { from: enums_1.VisitStatus.PROVIDER_ACCEPTED, to: enums_1.VisitStatus.EN_ROUTE, allowedRoles: [enums_1.Role.DOCTOR] },
-    { from: enums_1.VisitStatus.EN_ROUTE, to: enums_1.VisitStatus.ARRIVED, allowedRoles: [enums_1.Role.DOCTOR] },
-    { from: enums_1.VisitStatus.ARRIVED, to: enums_1.VisitStatus.IN_PROGRESS, allowedRoles: [enums_1.Role.DOCTOR] },
-    { from: enums_1.VisitStatus.IN_PROGRESS, to: enums_1.VisitStatus.COMPLETED, allowedRoles: [enums_1.Role.DOCTOR] },
+    { from: enums_1.VisitStatus.ASSIGNED, to: enums_1.VisitStatus.PROVIDER_ACCEPTED, allowedRoles: ANY_PROVIDER },
+    { from: enums_1.VisitStatus.ASSIGNED, to: enums_1.VisitStatus.PROVIDER_DECLINED, allowedRoles: ANY_PROVIDER },
+    { from: enums_1.VisitStatus.PROVIDER_ACCEPTED, to: enums_1.VisitStatus.EN_ROUTE, allowedRoles: ANY_PROVIDER },
+    { from: enums_1.VisitStatus.EN_ROUTE, to: enums_1.VisitStatus.ARRIVED, allowedRoles: ANY_PROVIDER },
+    { from: enums_1.VisitStatus.ARRIVED, to: enums_1.VisitStatus.IN_PROGRESS, allowedRoles: ANY_PROVIDER },
+    { from: enums_1.VisitStatus.IN_PROGRESS, to: enums_1.VisitStatus.COMPLETED, allowedRoles: ANY_PROVIDER },
     { from: enums_1.VisitStatus.REQUESTED, to: enums_1.VisitStatus.CANCELLED, allowedRoles: [enums_1.Role.PATIENT, enums_1.Role.ADMIN] },
     { from: enums_1.VisitStatus.ASSIGNED, to: enums_1.VisitStatus.CANCELLED, allowedRoles: [enums_1.Role.PATIENT, enums_1.Role.ADMIN] },
     { from: enums_1.VisitStatus.PROVIDER_ACCEPTED, to: enums_1.VisitStatus.CANCELLED, allowedRoles: [enums_1.Role.PATIENT, enums_1.Role.ADMIN] },

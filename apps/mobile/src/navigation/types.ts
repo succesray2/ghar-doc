@@ -26,6 +26,8 @@ export type BookingKind = 'consultation' | 'home-visit' | 'diagnostic-test' | 'd
 export type PatientStackParamList = {
   PatientTabs: NavigatorScreenParams<PatientTabParamList> | undefined;
   RequestVisit: { reasonHint?: string } | undefined;
+  RequestNursing: undefined;
+  RequestPhysiotherapy: undefined;
   DoctorProfile: { doctorId: string };
   MockBooking: { kind: BookingKind; id: string; title: string; price: number };
   BookingConfirmation: { title: string; subtitle: string };
@@ -59,17 +61,49 @@ export type DoctorStackParamList = {
   Support: undefined;
 };
 
+// Nurse and Physiotherapist mirror Doctor's tabs/stack shape exactly.
+export type NurseTabParamList = {
+  AssignedVisits: undefined;
+  Profile: undefined;
+};
+
+export type NurseStackParamList = {
+  NurseTabs: undefined;
+  Settings: undefined;
+  EditProfile: undefined;
+  StaticInfo: { title: string; body: string };
+  Support: undefined;
+};
+
+export type PhysiotherapistTabParamList = {
+  AssignedVisits: undefined;
+  Profile: undefined;
+};
+
+export type PhysiotherapistStackParamList = {
+  PhysiotherapistTabs: undefined;
+  Settings: undefined;
+  EditProfile: undefined;
+  StaticInfo: { title: string; body: string };
+  Support: undefined;
+};
+
 export type AdminTabParamList = {
   AllVisits: undefined;
   Safety: undefined;
   Profile: undefined;
 };
 
-// Admin's tabs live inside a stack so the doctor-assignment picker (and now
-// Settings) can be pushed/presented on top, mirroring web's AssignDoctorDialog overlay.
+// Admin's tabs live inside a stack so the provider-assignment picker, the
+// Nurse/Physiotherapist directories, and Settings can be pushed/presented on
+// top, mirroring web's AssignProviderDialog overlay and directory pages.
 export type AdminStackParamList = {
   AdminTabs: undefined;
-  AssignDoctorModal: { visitId: string; reasonForVisit: string };
+  AssignProviderModal: { visitId: string; reasonForVisit: string; serviceType: 'DOCTOR_VISIT' | 'NURSING' | 'PHYSIOTHERAPY' };
+  Nurses: undefined;
+  Physiotherapists: undefined;
+  CreateNurseModal: undefined;
+  CreatePhysiotherapistModal: undefined;
   Settings: undefined;
   EditProfile: undefined;
   StaticInfo: { title: string; body: string };

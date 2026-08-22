@@ -75,17 +75,9 @@ export function HomeScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.secondaryGrid}>
-        <SecondaryTile
-          icon="needle"
-          label="Nursing Care"
-          onPress={() => rootNav?.navigate('RequestVisit', { reasonHint: 'Nursing care: ' })}
-        />
+        <SecondaryTile icon="needle" label="Nursing Care" onPress={() => rootNav?.navigate('RequestNursing')} />
         <SecondaryTile icon="folder-heart-outline" label="Health Records" onPress={() => rootNav?.navigate('HealthRecords')} />
-        <SecondaryTile
-          icon="run"
-          label="Physiotherapy"
-          onPress={() => rootNav?.navigate('RequestVisit', { reasonHint: 'Physiotherapy: ' })}
-        />
+        <SecondaryTile icon="run" label="Physiotherapy" onPress={() => rootNav?.navigate('RequestPhysiotherapy')} />
         <SecondaryTile icon="ambulance" label="Emergency" danger onPress={() => rootNav?.navigate('Emergency')} />
       </View>
 

@@ -11,8 +11,12 @@ function timestampFieldFor(status) {
     switch (status) {
         case shared_1.VisitStatus.ASSIGNED:
             return 'assignedAt';
+        case shared_1.VisitStatus.PROVIDER_ACCEPTED:
+            return 'acceptedAt';
         case shared_1.VisitStatus.EN_ROUTE:
             return 'enRouteAt';
+        case shared_1.VisitStatus.ARRIVED:
+            return 'arrivedAt';
         case shared_1.VisitStatus.IN_PROGRESS:
             return 'inProgressAt';
         case shared_1.VisitStatus.COMPLETED:

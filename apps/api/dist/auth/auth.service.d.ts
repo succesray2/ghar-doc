@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { type SignupPatientInput, type SignupDoctorInput, type LoginInput } from '@ghar-doc/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthenticatedUser } from './types';
+import type { RequestContext } from '../common/types/request-context';
 interface Session {
     accessToken: string;
     refreshToken: string;
@@ -14,11 +15,19 @@ export declare class AuthService {
     private readonly config;
     private readonly logger;
     constructor(prisma: PrismaService, jwt: JwtService, config: ConfigService);
-    signupPatient(input: SignupPatientInput): Promise<Session>;
-    signupDoctor(input: SignupDoctorInput): Promise<Session>;
-    login(input: LoginInput): Promise<Session>;
-    refresh(presentedToken: string): Promise<Session>;
+    signupPatient(input: SignupPatientInput, ctx?: RequestContext): Promise<Session>;
+    signupDoctor(input: SignupDoctorInput, ctx?: RequestContext): Promise<Session>;
+    login(input: LoginInput, ctx?: RequestContext): Promise<Session>;
+    refresh(presentedToken: string, ctx?: RequestContext): Promise<Session>;
     logout(presentedToken: string | null): Promise<void>;
+    logoutAll(userId: string): Promise<void>;
+    listSessions(userId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        userAgent: string | null;
+        ip: string | null;
+    }[]>;
+    changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void>;
     me(userId: string): Promise<{
         patientProfile: {
             id: string;

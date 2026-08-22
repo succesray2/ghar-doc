@@ -7,6 +7,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { DoctorsModule } from './doctors/doctors.module';
+import { NursesModule } from './nurses/nurses.module';
+import { PhysiotherapistsModule } from './physiotherapists/physiotherapists.module';
 import { VisitsModule } from './visits/visits.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { FamilyMembersModule } from './family-members/family-members.module';
@@ -25,6 +27,8 @@ import { FamilyMembersModule } from './family-members/family-members.module';
     AuthModule,
     UsersModule,
     DoctorsModule,
+    NursesModule,
+    PhysiotherapistsModule,
     VisitsModule,
     NotificationsModule,
     FamilyMembersModule,

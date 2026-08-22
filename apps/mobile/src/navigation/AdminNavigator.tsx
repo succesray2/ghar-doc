@@ -3,7 +3,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
 import { AllVisitsScreen } from '../screens/admin/AllVisitsScreen';
 import { SafetyDashboardScreen } from '../screens/admin/SafetyDashboardScreen';
-import { AssignDoctorModal } from '../screens/admin/AssignDoctorModal';
+import { AssignProviderModal } from '../screens/admin/AssignProviderModal';
+import { NursesScreen } from '../screens/admin/NursesScreen';
+import { PhysiotherapistsScreen } from '../screens/admin/PhysiotherapistsScreen';
+import { CreateNurseModal } from '../screens/admin/CreateNurseModal';
+import { CreatePhysiotherapistModal } from '../screens/admin/CreatePhysiotherapistModal';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { EditProfileScreen } from '../screens/EditProfileScreen';
@@ -51,9 +55,17 @@ export function AdminNavigator() {
     <Stack.Navigator screenOptions={headerOptions}>
       <Stack.Screen name="AdminTabs" component={AdminTabs} options={{ headerShown: false }} />
       <Stack.Screen
-        name="AssignDoctorModal"
-        component={AssignDoctorModal}
-        options={{ presentation: 'modal', title: 'Assign Doctor' }}
+        name="AssignProviderModal"
+        component={AssignProviderModal}
+        options={{ presentation: 'modal', title: 'Assign Provider' }}
+      />
+      <Stack.Screen name="Nurses" component={NursesScreen} options={{ title: 'Nurses' }} />
+      <Stack.Screen name="Physiotherapists" component={PhysiotherapistsScreen} options={{ title: 'Physiotherapists' }} />
+      <Stack.Screen name="CreateNurseModal" component={CreateNurseModal} options={{ presentation: 'modal', title: 'Add Nurse' }} />
+      <Stack.Screen
+        name="CreatePhysiotherapistModal"
+        component={CreatePhysiotherapistModal}
+        options={{ presentation: 'modal', title: 'Add Physiotherapist' }}
       />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Edit Profile' }} />

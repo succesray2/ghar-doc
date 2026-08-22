@@ -2,17 +2,20 @@ import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from
 import type { Request } from 'express';
 import {
   CreateVisitSchema,
-  AssignDoctorSchema,
+  AssignProviderSchema,
   UpdateVisitStatusSchema,
   CancelVisitSchema,
   TriagePreviewSchema,
+  SafetyNetPreviewSchema,
   Role,
   type VisitStatus,
+  type ServiceType,
   type CreateVisitInput,
-  type AssignDoctorInput,
+  type AssignProviderInput,
   type UpdateVisitStatusInput,
   type CancelVisitInput,
   type TriagePreviewInput,
+  type SafetyNetPreviewInput,
 } from '@ghar-doc/shared';
 import { VisitsService } from './visits.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -39,10 +42,16 @@ export class VisitsController {
     return this.visitsService.previewTriage(body.triageAnswers);
   }
 
+  @Roles(Role.PATIENT)
+  @Post('safety-check-preview')
+  previewSafetyNet(@Body(new ZodValidationPipe(SafetyNetPreviewSchema)) body: SafetyNetPreviewInput) {
+    return this.visitsService.previewSafetyNet(body.safetyCheckAnswers);
+  }
+
   @Roles(Role.ADMIN)
   @Get()
-  findAll(@Query('status') status?: VisitStatus) {
-    return this.visitsService.findAll(status);
+  findAll(@Query('status') status?: VisitStatus, @Query('serviceType') serviceType?: ServiceType) {
+    return this.visitsService.findAll(status, serviceType);
   }
 
   @Roles(Role.PATIENT)
@@ -51,10 +60,10 @@ export class VisitsController {
     return this.visitsService.findMine(user.id);
   }
 
-  @Roles(Role.DOCTOR)
+  @Roles(Role.DOCTOR, Role.NURSE, Role.PHYSIOTHERAPIST)
   @Get('assigned')
   findAssigned(@CurrentUser() user: AuthenticatedUser) {
-    return this.visitsService.findAssigned(user.id);
+    return this.visitsService.findAssigned(user);
   }
 
   @Roles(Role.ADMIN)
@@ -72,14 +81,15 @@ export class VisitsController {
   @Patch(':id/assign')
   assign(
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(AssignDoctorSchema)) body: AssignDoctorInput,
+    @Body(new ZodValidationPipe(AssignProviderSchema)) body: AssignProviderInput,
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
   ) {
-    return this.visitsService.assign(id, body.doctorId, user, requestContext(req));
+    const providerId = body.doctorId ?? body.nurseId ?? body.physiotherapistId;
+    return this.visitsService.assign(id, providerId as string, user, requestContext(req));
   }
 
-  @Roles(Role.DOCTOR, Role.ADMIN)
+  @Roles(Role.DOCTOR, Role.NURSE, Role.PHYSIOTHERAPIST, Role.ADMIN)
   @Patch(':id/status')
   updateStatus(
     @Param('id') id: string,
